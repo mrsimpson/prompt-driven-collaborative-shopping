@@ -128,6 +128,9 @@ The Shopping Companion App follows these key strategic decisions:
 4. **Soft Delete**: Implementing soft deletion throughout the application for data recovery
 5. **Row-Level Security**: Using Supabase RLS policies to enforce access controls at the database level
 6. **Last-Edit-Wins Conflict Resolution**: Simplifying synchronization with timestamp-based resolution
+7. **Server-Side Business Logic**: Implementing all data consistency logic within Supabase:
+   - PL/pgSQL functions for simpler operations (timestamps, soft delete, list locking)
+   - Deno Edge Functions for complex operations (shopping sessions, multi-table operations)
 
 # Building Block View
 
@@ -268,9 +271,23 @@ classDiagram
         +enforceBusinessRules()
     }
     
+    class PLpgSQLFunctions {
+        +manageSoftDelete()
+        +updateAuditFields()
+        +lockUnlockLists()
+    }
+    
+    class DenoEdgeFunctions {
+        +createShoppingSession()
+        +endShoppingSession()
+        +handleComplexPermissions()
+    }
+    
     Authentication --> PostgreSQLDatabase : uses
     PostgreSQLDatabase --> RowLevelSecurity : enforces
     PostgreSQLDatabase --> DatabaseTriggers : executes
+    PostgreSQLDatabase --> PLpgSQLFunctions : executes
+    PostgreSQLDatabase --> DenoEdgeFunctions : calls
     PostgreSQLDatabase --> RealTimeEngine : notifies
 ```
 
@@ -281,6 +298,8 @@ classDiagram
 | Real-time Engine | Provide WebSocket-based real-time updates |
 | Row-Level Security | Enforce access control policies |
 | Database Triggers | Maintain audit fields and enforce business rules |
+| PL/pgSQL Functions | Handle simple business logic operations |
+| Deno Edge Functions | Handle complex multi-table operations |
 
 # Runtime View
 
