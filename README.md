@@ -2,8 +2,6 @@
 
 A collaborative grocery shopping application that allows multiple users to create, share, and shop from shared lists. Built with React Native, Expo, and Supabase.
 
-![Shopping Companion App](https://via.placeholder.com/800x400?text=Shopping+Companion+App)
-
 ## Features
 
 - **Collaborative Shopping Lists**: Create and share shopping lists with friends, family, or community members
@@ -22,7 +20,7 @@ The Shopping Companion App follows a local-first architecture with real-time syn
 - **Backend**: Supabase for authentication, database, and real-time updates
 - **Synchronization**: Lazy sync with "last edit wins" conflict resolution
 
-For detailed architecture information, see the [Architecture Documentation](./arc42.md).
+For detailed architecture information, see the [Architecture Documentation](./docs/arc42.md).
 
 ## Tech Stack
 
@@ -50,12 +48,14 @@ For detailed architecture information, see the [Architecture Documentation](./ar
 ### Installation
 
 1. Clone the repository:
+
    ```bash
    git clone https://github.com/yourusername/shopping-companion-app.git
    cd shopping-companion-app
    ```
 
 2. Install dependencies:
+
    ```bash
    npm install
    # or
@@ -63,12 +63,14 @@ For detailed architecture information, see the [Architecture Documentation](./ar
    ```
 
 3. Create a `.env` file in the project root with your Supabase credentials:
-   ```
+
+   ```bash
    EXPO_PUBLIC_SUPABASE_URL=your-supabase-url
    EXPO_PUBLIC_SUPABASE_ANON_KEY=your-supabase-anon-key
    ```
 
 4. Start the development server:
+
    ```bash
    npx expo start
    ```
@@ -78,6 +80,7 @@ For detailed architecture information, see the [Architecture Documentation](./ar
 We use Supabase CLI for local development:
 
 1. Install the Supabase CLI:
+
    ```bash
    # macOS and Linux
    brew install supabase/tap/supabase
@@ -88,17 +91,20 @@ We use Supabase CLI for local development:
    ```
 
 2. Start the local Supabase development environment:
+
    ```bash
    supabase start
    ```
 
 3. The CLI will output your local Supabase URL and anon key. Add these to your `.env` file:
-   ```
+
+   ```bash
    EXPO_PUBLIC_SUPABASE_URL=http://localhost:54321
    EXPO_PUBLIC_SUPABASE_ANON_KEY=your-local-anon-key
    ```
 
 4. Apply database migrations:
+
    ```bash
    supabase db push
    ```
@@ -106,11 +112,13 @@ We use Supabase CLI for local development:
    This will apply all migrations, including schema, RLS policies, and triggers defined in the `supabase/migrations` directory.
 
 5. To create new migrations:
+
    ```bash
    supabase migration new your_migration_name
    ```
 
 6. When you're done developing, you can stop the local Supabase instance:
+
    ```bash
    supabase stop
    ```
@@ -133,7 +141,7 @@ yarn test --coverage
 
 ## Project Structure
 
-```
+```text
 shopping-companion-app/
 ├── app/                   # Expo Router app directory
 │   ├── (auth)/            # Authentication screens
@@ -156,9 +164,9 @@ shopping-companion-app/
 │   ├── seed.sql           # Seed data for development
 │   └── config.toml        # Supabase configuration
 ├── docs/                  # Documentation
-│   ├── ShoppingApp_PDD.md # Product Design Document
-│   └── ShoppingApp_DataModel.md # Data Model Documentation
-├── arc42.md               # Architecture documentation
+│   ├── pdd.md             # Product Design Document
+|   ├── arc42.md           # Architecture documentation
+│   └── data-model.md      # Data Model details
 ├── app.json               # Expo configuration
 └── package.json           # Project dependencies
 ```
@@ -168,14 +176,18 @@ shopping-companion-app/
 All backend logic responsible for data consistency resides within Supabase:
 
 ### PL/pgSQL Database Functions
+
 Located in `supabase/migrations/*_functions.sql` files, these handle simpler operations:
+
 - Timestamp management (created_at, updated_at, last_modified_at)
 - Soft delete functionality
 - List locking/unlocking during shopping sessions
 - Basic validation and constraint enforcement
 
 ### Deno Edge Functions
+
 Located in `supabase/functions/` directory, these handle more complex operations:
+
 - Creating shopping sessions with multiple lists
 - Ending shopping sessions and moving unpurchased items to new lists
 - Complex permission checks that go beyond basic RLS

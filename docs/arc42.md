@@ -16,7 +16,7 @@ The core requirements of the Shopping Companion App are:
 * At checkout, the application groups shopped items by source list for easy packing into separate bags
 * Lists are locked during shopping to prevent concurrent modifications
 
-For detailed requirements, see the [Product Design Document](./ShoppingApp_PDD.md).
+For detailed requirements, see the [Product Design Document](./pdd.md).
 
 ## Quality Goals
 
@@ -185,7 +185,7 @@ The Shopping Companion App consists of these main building blocks:
 
 **Responsibility**: Stores all application data with appropriate security policies.
 
-For detailed information about the data model, see the [Data Model Documentation](./ShoppingApp_DataModel.md).
+For detailed information about the data model, see the [Data Model Documentation](./data-model.md).
 
 ## Level 2
 
