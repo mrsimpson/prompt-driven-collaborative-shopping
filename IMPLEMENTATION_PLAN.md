@@ -25,6 +25,13 @@ This document outlines the step-by-step implementation plan for the collaborativ
   - [x] Add shopping session management logic
   - [x] Implement list locking mechanism
 
+- [x] **1.5 Implement Service Layer Tests**
+  - [x] Set up testing framework (Jest)
+  - [x] Create mocks for Dexie repositories
+  - [x] Implement tests for ShoppingListService
+  - [x] Implement tests for ShoppingSessionService
+  - [x] Implement tests for UserService
+
 ## Phase 2: Basic UI Implementation
 - [ ] **2.1 Set Up Navigation**
   - [ ] Configure Expo Router
@@ -110,8 +117,7 @@ This document outlines the step-by-step implementation plan for the collaborativ
 
 ## Phase 6: Testing & Refinement
 - [ ] **6.1 Implement Unit Tests**
-  - [ ] Create tests for service layer
-  - [ ] Test repository implementations
+  - [ ] Create tests for repository implementations
   - [ ] Add tests for synchronization logic
 
 - [ ] **6.2 Add Integration Tests**
