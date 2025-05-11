@@ -1,30 +1,7 @@
 import { LocalShoppingSessionService } from '../../../services/shopping-session-service';
 import { ShoppingSessionStatus } from '../../../types/models';
-import { db } from '../../../stores/database';
 
-// Mock the database
-jest.mock('../../../stores/database', () => {
-  return {
-    db: {
-      shoppingSessions: {
-        add: jest.fn(),
-        get: jest.fn(),
-        where: jest.fn(),
-        put: jest.fn(),
-      },
-      sessionLists: {
-        add: jest.fn(),
-      },
-      shoppingLists: {
-        get: jest.fn(),
-        update: jest.fn(),
-        put: jest.fn(),
-      },
-    },
-  };
-});
-
-// Mock the repository methods
+// Mock the repositories
 jest.mock('../../../repositories/shopping-session-repository', () => {
   return {
     DexieShoppingSessionRepository: jest.fn().mockImplementation(() => {
@@ -54,6 +31,12 @@ jest.mock('../../../repositories/shopping-list-repository', () => {
               id,
               name: `List ${id}`,
               isLocked: false,
+              createdBy: 'user-123',
+              description: '',
+              isShared: false,
+              createdAt: new Date(),
+              updatedAt: new Date(),
+              lastModifiedAt: new Date(),
             });
           }
           return Promise.resolve(null);
@@ -91,6 +74,21 @@ describe('ShoppingSessionService - createSession', () => {
     expect(result.data).toBeDefined();
     expect(result.data?.userId).toBe(mockUserId);
     expect(result.data?.status).toBe(ShoppingSessionStatus.ACTIVE);
+    
+    // Verify repository interactions
+    expect(service['sessionRepository'].findActiveByUser).toHaveBeenCalledWith(mockUserId);
+    expect(service['listRepository'].findById).toHaveBeenCalledWith(mockListId1);
+    expect(service['listRepository'].findById).toHaveBeenCalledWith(mockListId2);
+    expect(service['sessionRepository'].save).toHaveBeenCalledWith(
+      expect.objectContaining({
+        userId: mockUserId,
+        status: ShoppingSessionStatus.ACTIVE,
+      })
+    );
+    expect(service['sessionRepository'].addListToSession).toHaveBeenCalledTimes(2);
+    expect(service['listRepository'].lockList).toHaveBeenCalledTimes(2);
+    expect(service['listRepository'].lockList).toHaveBeenCalledWith(mockListId1);
+    expect(service['listRepository'].lockList).toHaveBeenCalledWith(mockListId2);
   });
   
   it('should return error if user already has an active session', async () => {
@@ -101,7 +99,7 @@ describe('ShoppingSessionService - createSession', () => {
     };
     
     // Mock existing active session
-    jest.spyOn(service['sessionRepository'], 'findActiveByUser').mockResolvedValueOnce({
+    (service['sessionRepository'].findActiveByUser as jest.Mock).mockResolvedValueOnce({
       id: 'existing-session',
       userId: mockUserId,
       status: ShoppingSessionStatus.ACTIVE,
@@ -117,6 +115,9 @@ describe('ShoppingSessionService - createSession', () => {
     // Assert
     expect(result.success).toBe(false);
     expect(result.error).toBe('User already has an active shopping session');
+    expect(service['sessionRepository'].save).not.toHaveBeenCalled();
+    expect(service['sessionRepository'].addListToSession).not.toHaveBeenCalled();
+    expect(service['listRepository'].lockList).not.toHaveBeenCalled();
   });
   
   it('should return error if a list is not found', async () => {
@@ -127,13 +128,13 @@ describe('ShoppingSessionService - createSession', () => {
     };
     
     // Mock list not found
-    jest.spyOn(service['listRepository'], 'findById').mockImplementation((id) => {
+    (service['listRepository'].findById as jest.Mock).mockImplementation((id) => {
       if (id === mockListId1) {
         return Promise.resolve({
           id: mockListId1,
           name: 'List 1',
           isLocked: false,
-          createdBy: '',
+          createdBy: 'user-123',
           description: '',
           isShared: false,
           createdAt: new Date(),
@@ -150,6 +151,9 @@ describe('ShoppingSessionService - createSession', () => {
     // Assert
     expect(result.success).toBe(false);
     expect(result.error).toBe('List with ID non-existent-list not found');
+    expect(service['sessionRepository'].save).not.toHaveBeenCalled();
+    expect(service['sessionRepository'].addListToSession).not.toHaveBeenCalled();
+    expect(service['listRepository'].lockList).not.toHaveBeenCalled();
   });
   
   it('should return error if a list is already locked', async () => {
@@ -160,13 +164,13 @@ describe('ShoppingSessionService - createSession', () => {
     };
     
     // Mock locked list
-    jest.spyOn(service['listRepository'], 'findById').mockImplementation((id) => {
+    (service['listRepository'].findById as jest.Mock).mockImplementation((id) => {
       if (id === mockListId1) {
         return Promise.resolve({
           id: mockListId1,
           name: 'List 1',
           isLocked: false,
-          createdBy: '',
+          createdBy: 'user-123',
           description: '',
           isShared: false,
           createdAt: new Date(),
@@ -178,7 +182,7 @@ describe('ShoppingSessionService - createSession', () => {
           id: mockListId2,
           name: 'List 2',
           isLocked: true, // Already locked
-          createdBy: '',
+          createdBy: 'user-123',
           description: '',
           isShared: false,
           createdAt: new Date(),
@@ -195,6 +199,9 @@ describe('ShoppingSessionService - createSession', () => {
     // Assert
     expect(result.success).toBe(false);
     expect(result.error).toBe(`List with ID ${mockListId2} is already locked`);
+    expect(service['sessionRepository'].save).not.toHaveBeenCalled();
+    expect(service['sessionRepository'].addListToSession).not.toHaveBeenCalled();
+    expect(service['listRepository'].lockList).not.toHaveBeenCalled();
   });
   
   it('should handle database errors gracefully', async () => {
@@ -205,7 +212,7 @@ describe('ShoppingSessionService - createSession', () => {
     };
     
     // Mock database error
-    jest.spyOn(service['sessionRepository'], 'save').mockRejectedValueOnce(new Error('Database error'));
+    (service['sessionRepository'].save as jest.Mock).mockRejectedValueOnce(new Error('Database error'));
     
     // Act
     const result = await service.createSession(params);
@@ -213,5 +220,7 @@ describe('ShoppingSessionService - createSession', () => {
     // Assert
     expect(result.success).toBe(false);
     expect(result.error).toBe('Database error');
+    expect(service['sessionRepository'].addListToSession).not.toHaveBeenCalled();
+    expect(service['listRepository'].lockList).not.toHaveBeenCalled();
   });
 });

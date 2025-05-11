@@ -1,27 +1,7 @@
 import { LocalShoppingListService } from '../../../services/shopping-list-service';
 import { db } from '../../../stores/database';
-import { generateUUID } from '../../../utils/uuid';
 
-// Mock the database
-jest.mock('../../../stores/database', () => {
-  return {
-    db: {
-      shoppingLists: {
-        add: jest.fn(),
-        get: jest.fn(),
-        where: jest.fn(),
-        update: jest.fn(),
-        put: jest.fn(),
-      },
-      listOwners: {
-        add: jest.fn(),
-        where: jest.fn(),
-      },
-    },
-  };
-});
-
-// Mock the repository methods
+// Mock the repositories
 jest.mock('../../../repositories/shopping-list-repository', () => {
   return {
     DexieShoppingListRepository: jest.fn().mockImplementation(() => {
@@ -40,22 +20,29 @@ jest.mock('../../../repositories/shopping-list-repository', () => {
   };
 });
 
+// Mock UUID generation
+jest.mock('../../../utils/uuid', () => ({
+  generateUUID: jest.fn().mockReturnValue('test-uuid')
+}));
+
+// Mock the database for list owner creation
+jest.mock('../../../stores/database', () => {
+  return {
+    db: {
+      listOwners: {
+        add: jest.fn().mockResolvedValue('owner-123'),
+      },
+    },
+  };
+});
+
 describe('ShoppingListService - createList', () => {
   let service: LocalShoppingListService;
   const mockUserId = 'user-123';
-  const mockDate = new Date('2025-01-01T12:00:00Z');
   
   beforeEach(() => {
     jest.clearAllMocks();
     service = new LocalShoppingListService();
-    
-    // Mock the repository methods used by createList
-    (db.shoppingLists.add as jest.Mock).mockResolvedValue('list-123');
-    (db.shoppingLists.put as jest.Mock).mockResolvedValue('list-123');
-    (db.listOwners.add as jest.Mock).mockResolvedValue('owner-123');
-    
-    // Mock generateUUID
-    (generateUUID as jest.Mock).mockReturnValue('test-uuid');
   });
   
   it('should create a list successfully', async () => {
@@ -78,7 +65,16 @@ describe('ShoppingListService - createList', () => {
     expect(result.data?.isShared).toBe(false);
     expect(result.data?.isLocked).toBe(false);
     
-    // Verify database calls
+    // Verify repository interactions
+    expect(service['listRepository'].save).toHaveBeenCalledWith(expect.objectContaining({
+      name: 'Grocery List',
+      description: 'Weekly groceries',
+      createdBy: mockUserId,
+      isShared: false,
+      isLocked: false,
+    }));
+    
+    // Verify list owner creation
     expect(db.listOwners.add).toHaveBeenCalledWith(expect.objectContaining({
       id: 'test-uuid',
       listId: expect.any(String),
@@ -102,6 +98,14 @@ describe('ShoppingListService - createList', () => {
     expect(result.success).toBe(true);
     expect(result.data?.communityId).toBe('community-123');
     expect(result.data?.isShared).toBe(true);
+    
+    // Verify repository interactions
+    expect(service['listRepository'].save).toHaveBeenCalledWith(expect.objectContaining({
+      name: 'Family List',
+      description: 'Family shopping',
+      communityId: 'community-123',
+      isShared: true,
+    }));
   });
   
   it('should return error for invalid list name', async () => {
@@ -118,6 +122,9 @@ describe('ShoppingListService - createList', () => {
     // Assert
     expect(result.success).toBe(false);
     expect(result.error).toBe('Invalid list name');
+    
+    // Verify repository was not called
+    expect(service['listRepository'].save).not.toHaveBeenCalled();
     expect(db.listOwners.add).not.toHaveBeenCalled();
   });
   
@@ -129,8 +136,8 @@ describe('ShoppingListService - createList', () => {
       isShared: false,
     };
     
-    // Mock database error
-    (db.listOwners.add as jest.Mock).mockRejectedValue(new Error('Database error'));
+    // Mock repository error
+    (service['listRepository'].save as jest.Mock).mockRejectedValueOnce(new Error('Database error'));
     
     // Act
     const result = await service.createList(params, mockUserId);
@@ -138,5 +145,6 @@ describe('ShoppingListService - createList', () => {
     // Assert
     expect(result.success).toBe(false);
     expect(result.error).toBe('Database error');
+    expect(db.listOwners.add).not.toHaveBeenCalled();
   });
 });

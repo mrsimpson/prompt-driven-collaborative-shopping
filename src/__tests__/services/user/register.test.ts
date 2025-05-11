@@ -1,13 +1,18 @@
 import { LocalUserService } from '../../../services/user-service';
-import { db } from '../../../stores/database';
 import { generateUUID } from '../../../utils/uuid';
+import { db } from '../../../stores/database';
+
+// Mock UUID generation
+jest.mock('../../../utils/uuid', () => ({
+  generateUUID: jest.fn().mockReturnValue('test-uuid')
+}));
 
 // Mock the database
 jest.mock('../../../stores/database', () => {
   return {
     db: {
       users: {
-        add: jest.fn(),
+        add: jest.fn().mockResolvedValue('user-123'),
         where: jest.fn(),
       },
     },
@@ -22,19 +27,13 @@ describe('UserService - register', () => {
     service = new LocalUserService();
     
     // Mock user not existing
-    (db.users.where as jest.Mock).mockReturnValue({
+    (db.users.where as jest.Mock) = jest.fn().mockReturnValue({
       equals: jest.fn().mockReturnValue({
         and: jest.fn().mockReturnValue({
           first: jest.fn().mockResolvedValue(null)
         })
       })
     });
-    
-    // Mock user creation
-    (db.users.add as jest.Mock).mockResolvedValue('user-123');
-    
-    // Mock UUID generation
-    (generateUUID as jest.Mock).mockReturnValue('test-uuid');
   });
   
   it('should register a user successfully', async () => {
@@ -55,7 +54,7 @@ describe('UserService - register', () => {
     expect(result.data?.email).toBe('test@example.com');
     expect(result.token).toBe('local-auth-token');
     
-    // Verify database calls
+    // Verify database interactions
     expect(db.users.add).toHaveBeenCalledWith(expect.objectContaining({
       id: 'test-uuid',
       username: 'testuser',
@@ -123,7 +122,7 @@ describe('UserService - register', () => {
     };
     
     // Mock existing user
-    (db.users.where as jest.Mock).mockReturnValue({
+    (db.users.where as jest.Mock) = jest.fn().mockReturnValue({
       equals: jest.fn().mockReturnValue({
         and: jest.fn().mockReturnValue({
           first: jest.fn().mockResolvedValue({
@@ -152,7 +151,7 @@ describe('UserService - register', () => {
     };
     
     // Mock database error
-    (db.users.add as jest.Mock).mockRejectedValue(new Error('Database error'));
+    (db.users.add as jest.Mock).mockRejectedValueOnce(new Error('Database error'));
     
     // Act
     const result = await service.register(params);

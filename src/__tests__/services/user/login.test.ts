@@ -28,7 +28,7 @@ describe('UserService - login', () => {
     };
     
     // Mock user found
-    (db.users.where as jest.Mock).mockReturnValue({
+    (db.users.where as jest.Mock) = jest.fn().mockReturnValue({
       equals: jest.fn().mockReturnValue({
         and: jest.fn().mockReturnValue({
           first: jest.fn().mockResolvedValue({
@@ -50,6 +50,9 @@ describe('UserService - login', () => {
     expect(result.data?.username).toBe('testuser');
     expect(result.data?.email).toBe('test@example.com');
     expect(result.token).toBe('local-auth-token');
+    
+    // Verify database interactions
+    expect(db.users.where).toHaveBeenCalledWith('email');
   });
   
   it('should return error for invalid email format', async () => {
@@ -76,7 +79,7 @@ describe('UserService - login', () => {
     };
     
     // Mock user not found
-    (db.users.where as jest.Mock).mockReturnValue({
+    (db.users.where as jest.Mock) = jest.fn().mockReturnValue({
       equals: jest.fn().mockReturnValue({
         and: jest.fn().mockReturnValue({
           first: jest.fn().mockResolvedValue(null)
@@ -100,7 +103,7 @@ describe('UserService - login', () => {
     };
     
     // Mock database error
-    (db.users.where as jest.Mock).mockReturnValue({
+    (db.users.where as jest.Mock) = jest.fn().mockReturnValue({
       equals: jest.fn().mockReturnValue({
         and: jest.fn().mockImplementation(() => {
           throw new Error('Database error');
