@@ -1,5 +1,4 @@
 import { LocalShoppingListService } from '../../../services/shopping-list-service';
-import { ShoppingList } from '../../../types/models';
 
 // Mock the repositories
 jest.mock('../../../repositories/shopping-list-repository', () => {

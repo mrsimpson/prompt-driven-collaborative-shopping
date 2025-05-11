@@ -1,5 +1,4 @@
 import { LocalUserService } from '../../../services/user-service';
-import { generateUUID } from '../../../utils/uuid';
 import { db } from '../../../stores/database';
 
 // Mock UUID generation

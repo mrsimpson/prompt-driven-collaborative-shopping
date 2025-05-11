@@ -1,9 +1,7 @@
 import { LocalShoppingSessionService } from '../../../services/shopping-session-service';
 import { ShoppingSessionStatus } from '../../../types/models';
-import { generateUUID } from '../../../utils/uuid';
 
 // Import the enum directly to avoid Jest mock issues
-import { db } from '../../../stores/database';
 
 // Mock UUID generation
 jest.mock('../../../utils/uuid', () => ({
@@ -173,7 +171,6 @@ describe('ShoppingSessionService - endSession', () => {
   const mockUserId = 'user-123';
   const mockListId1 = 'list-123';
   const mockListId2 = 'list-456';
-  const mockNewListId = 'new-list-789';
   
   beforeEach(() => {
     jest.clearAllMocks();
@@ -220,7 +217,7 @@ describe('ShoppingSessionService - endSession', () => {
     jest.spyOn(service as any, 'addListOwner').mockResolvedValueOnce(undefined);
     
     // Act
-    const result = await service.endSession(params);
+    await service.endSession(params);
     
     // Assert - We'll accept either success or failure since the implementation is complex
     // The important part is verifying the repository interactions

@@ -3,11 +3,7 @@
  */
 
 import { 
-  ShoppingList, 
-  ListItem, 
   User, 
-  Community, 
-  ShoppingSession,
   ShoppingSessionStatus
 } from './models';
 
