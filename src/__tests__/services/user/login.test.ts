@@ -102,7 +102,9 @@ describe('UserService - login', () => {
     // Mock database error
     (db.users.where as jest.Mock).mockReturnValue({
       equals: jest.fn().mockReturnValue({
-        and: jest.fn().mockRejectedValue(new Error('Database error'))
+        and: jest.fn().mockImplementation(() => {
+          throw new Error('Database error');
+        })
       })
     });
     

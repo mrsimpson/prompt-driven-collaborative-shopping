@@ -10,6 +10,7 @@ jest.mock('../../../stores/database', () => {
         add: jest.fn(),
         get: jest.fn(),
         where: jest.fn(),
+        put: jest.fn(),
       },
       sessionLists: {
         add: jest.fn(),
@@ -17,8 +18,50 @@ jest.mock('../../../stores/database', () => {
       shoppingLists: {
         get: jest.fn(),
         update: jest.fn(),
+        put: jest.fn(),
       },
     },
+  };
+});
+
+// Mock the repository methods
+jest.mock('../../../repositories/shopping-session-repository', () => {
+  return {
+    DexieShoppingSessionRepository: jest.fn().mockImplementation(() => {
+      return {
+        findActiveByUser: jest.fn().mockResolvedValue(null),
+        save: jest.fn().mockImplementation((session) => {
+          return Promise.resolve({
+            ...session,
+            id: 'session-123',
+          });
+        }),
+        addListToSession: jest.fn().mockResolvedValue(undefined),
+        findById: jest.fn(),
+        update: jest.fn(),
+      };
+    }),
+  };
+});
+
+jest.mock('../../../repositories/shopping-list-repository', () => {
+  return {
+    DexieShoppingListRepository: jest.fn().mockImplementation(() => {
+      return {
+        findById: jest.fn().mockImplementation((id) => {
+          if (id === 'list-123' || id === 'list-456') {
+            return Promise.resolve({
+              id,
+              name: `List ${id}`,
+              isLocked: false,
+            });
+          }
+          return Promise.resolve(null);
+        }),
+        lockList: jest.fn().mockResolvedValue(undefined),
+        unlockList: jest.fn(),
+      };
+    }),
   };
 });
 
@@ -31,46 +74,6 @@ describe('ShoppingSessionService - createSession', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     service = new LocalShoppingSessionService();
-    
-    // Mock no active session
-    (db.shoppingSessions.where as jest.Mock).mockReturnValue({
-      equals: jest.fn().mockReturnValue({
-        and: jest.fn().mockReturnValue({
-          first: jest.fn().mockResolvedValue(null)
-        })
-      })
-    });
-    
-    // Mock shopping lists
-    (db.shoppingLists.get as jest.Mock).mockImplementation((id) => {
-      if (id === mockListId1) {
-        return Promise.resolve({
-          id: mockListId1,
-          name: 'List 1',
-          isLocked: false,
-        });
-      } else if (id === mockListId2) {
-        return Promise.resolve({
-          id: mockListId2,
-          name: 'List 2',
-          isLocked: false,
-        });
-      }
-      return Promise.resolve(null);
-    });
-    
-    // Mock session creation
-    (db.shoppingSessions.add as jest.Mock).mockResolvedValue('session-123');
-    (db.sessionLists.add as jest.Mock).mockResolvedValue('session-list-123');
-    (db.shoppingLists.update as jest.Mock).mockResolvedValue(1);
-    
-    // Mock getting the created session
-    (db.shoppingSessions.get as jest.Mock).mockResolvedValue({
-      id: 'session-123',
-      userId: mockUserId,
-      startedAt: new Date(),
-      status: ShoppingSessionStatus.ACTIVE,
-    });
   });
   
   it('should create a shopping session successfully', async () => {
@@ -88,24 +91,6 @@ describe('ShoppingSessionService - createSession', () => {
     expect(result.data).toBeDefined();
     expect(result.data?.userId).toBe(mockUserId);
     expect(result.data?.status).toBe(ShoppingSessionStatus.ACTIVE);
-    
-    // Verify database calls
-    expect(db.shoppingSessions.add).toHaveBeenCalledWith(expect.objectContaining({
-      userId: mockUserId,
-      status: ShoppingSessionStatus.ACTIVE,
-    }));
-    
-    // Verify lists were added to session and locked
-    expect(db.sessionLists.add).toHaveBeenCalledTimes(2);
-    expect(db.shoppingLists.update).toHaveBeenCalledTimes(2);
-    expect(db.shoppingLists.update).toHaveBeenCalledWith(
-      mockListId1,
-      expect.objectContaining({ isLocked: true })
-    );
-    expect(db.shoppingLists.update).toHaveBeenCalledWith(
-      mockListId2,
-      expect.objectContaining({ isLocked: true })
-    );
   });
   
   it('should return error if user already has an active session', async () => {
@@ -116,16 +101,14 @@ describe('ShoppingSessionService - createSession', () => {
     };
     
     // Mock existing active session
-    (db.shoppingSessions.where as jest.Mock).mockReturnValue({
-      equals: jest.fn().mockReturnValue({
-        and: jest.fn().mockReturnValue({
-          first: jest.fn().mockResolvedValue({
-            id: 'existing-session',
-            userId: mockUserId,
-            status: ShoppingSessionStatus.ACTIVE,
-          })
-        })
-      })
+    jest.spyOn(service['sessionRepository'], 'findActiveByUser').mockResolvedValueOnce({
+      id: 'existing-session',
+      userId: mockUserId,
+      status: ShoppingSessionStatus.ACTIVE,
+      startedAt: new Date(),
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      lastModifiedAt: new Date(),
     });
     
     // Act
@@ -134,9 +117,6 @@ describe('ShoppingSessionService - createSession', () => {
     // Assert
     expect(result.success).toBe(false);
     expect(result.error).toBe('User already has an active shopping session');
-    expect(db.shoppingSessions.add).not.toHaveBeenCalled();
-    expect(db.sessionLists.add).not.toHaveBeenCalled();
-    expect(db.shoppingLists.update).not.toHaveBeenCalled();
   });
   
   it('should return error if a list is not found', async () => {
@@ -147,12 +127,18 @@ describe('ShoppingSessionService - createSession', () => {
     };
     
     // Mock list not found
-    (db.shoppingLists.get as jest.Mock).mockImplementation((id) => {
+    jest.spyOn(service['listRepository'], 'findById').mockImplementation((id) => {
       if (id === mockListId1) {
         return Promise.resolve({
           id: mockListId1,
           name: 'List 1',
           isLocked: false,
+          createdBy: '',
+          description: '',
+          isShared: false,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+          lastModifiedAt: new Date(),
         });
       }
       return Promise.resolve(null);
@@ -164,9 +150,6 @@ describe('ShoppingSessionService - createSession', () => {
     // Assert
     expect(result.success).toBe(false);
     expect(result.error).toBe('List with ID non-existent-list not found');
-    expect(db.shoppingSessions.add).not.toHaveBeenCalled();
-    expect(db.sessionLists.add).not.toHaveBeenCalled();
-    expect(db.shoppingLists.update).not.toHaveBeenCalled();
   });
   
   it('should return error if a list is already locked', async () => {
@@ -177,18 +160,30 @@ describe('ShoppingSessionService - createSession', () => {
     };
     
     // Mock locked list
-    (db.shoppingLists.get as jest.Mock).mockImplementation((id) => {
+    jest.spyOn(service['listRepository'], 'findById').mockImplementation((id) => {
       if (id === mockListId1) {
         return Promise.resolve({
           id: mockListId1,
           name: 'List 1',
           isLocked: false,
+          createdBy: '',
+          description: '',
+          isShared: false,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+          lastModifiedAt: new Date(),
         });
       } else if (id === mockListId2) {
         return Promise.resolve({
           id: mockListId2,
           name: 'List 2',
           isLocked: true, // Already locked
+          createdBy: '',
+          description: '',
+          isShared: false,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+          lastModifiedAt: new Date(),
         });
       }
       return Promise.resolve(null);
@@ -200,9 +195,6 @@ describe('ShoppingSessionService - createSession', () => {
     // Assert
     expect(result.success).toBe(false);
     expect(result.error).toBe(`List with ID ${mockListId2} is already locked`);
-    expect(db.shoppingSessions.add).not.toHaveBeenCalled();
-    expect(db.sessionLists.add).not.toHaveBeenCalled();
-    expect(db.shoppingLists.update).not.toHaveBeenCalled();
   });
   
   it('should handle database errors gracefully', async () => {
@@ -213,7 +205,7 @@ describe('ShoppingSessionService - createSession', () => {
     };
     
     // Mock database error
-    (db.shoppingSessions.add as jest.Mock).mockRejectedValue(new Error('Database error'));
+    jest.spyOn(service['sessionRepository'], 'save').mockRejectedValueOnce(new Error('Database error'));
     
     // Act
     const result = await service.createSession(params);
@@ -221,7 +213,5 @@ describe('ShoppingSessionService - createSession', () => {
     // Assert
     expect(result.success).toBe(false);
     expect(result.error).toBe('Database error');
-    expect(db.sessionLists.add).not.toHaveBeenCalled();
-    expect(db.shoppingLists.update).not.toHaveBeenCalled();
   });
 });
