@@ -1,23 +1,34 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, FlatList, TouchableOpacity, Alert } from 'react-native';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { Check, ShoppingBag } from 'lucide-react-native';
 import { HeaderWithBack } from '@/src/components/HeaderWithBack';
+import { layout, colors, typography, buttons } from '@/src/styles/common';
 
 // Mock data - will be replaced with actual data from our shopping session
-const MOCK_ITEMS = [
-  { id: '101', name: 'Milk', quantity: 1, unit: 'gallon', isPurchased: false, sourceList: 'Grocery List' },
-  { id: '102', name: 'Eggs', quantity: 12, unit: 'pcs', isPurchased: false, sourceList: 'Grocery List' },
-  { id: '103', name: 'Bread', quantity: 1, unit: 'loaf', isPurchased: false, sourceList: 'Grocery List' },
-  { id: '201', name: 'Screws', quantity: 20, unit: 'pcs', isPurchased: false, sourceList: 'Hardware Store' },
-  { id: '202', name: 'Paint', quantity: 1, unit: 'gallon', isPurchased: false, sourceList: 'Hardware Store' },
-  { id: '301', name: 'Balloons', quantity: 20, unit: 'pcs', isPurchased: false, sourceList: 'Birthday Party' },
-  { id: '302', name: 'Cake', quantity: 1, unit: '', isPurchased: false, sourceList: 'Birthday Party' },
+const ALL_MOCK_ITEMS = [
+  { id: '101', name: 'Milk', quantity: 1, unit: 'gallon', isPurchased: false, sourceList: 'Grocery List', listId: '1' },
+  { id: '102', name: 'Eggs', quantity: 12, unit: 'pcs', isPurchased: false, sourceList: 'Grocery List', listId: '1' },
+  { id: '103', name: 'Bread', quantity: 1, unit: 'loaf', isPurchased: false, sourceList: 'Grocery List', listId: '1' },
+  { id: '201', name: 'Screws', quantity: 20, unit: 'pcs', isPurchased: false, sourceList: 'Hardware Store', listId: '2' },
+  { id: '202', name: 'Paint', quantity: 1, unit: 'gallon', isPurchased: false, sourceList: 'Hardware Store', listId: '2' },
+  { id: '301', name: 'Balloons', quantity: 20, unit: 'pcs', isPurchased: false, sourceList: 'Birthday Party', listId: '3' },
+  { id: '302', name: 'Cake', quantity: 1, unit: '', isPurchased: false, sourceList: 'Birthday Party', listId: '3' },
 ];
 
 export default function ShoppingSessionScreen() {
-  const [items, setItems] = useState(MOCK_ITEMS);
+  const params = useLocalSearchParams();
+  const listIds = params.listIds ? String(params.listIds).split(',') : [];
+  
+  const [items, setItems] = useState(ALL_MOCK_ITEMS);
   const [isCheckoutMode, setIsCheckoutMode] = useState(false);
+  
+  // Filter items based on listIds if provided
+  useEffect(() => {
+    if (listIds.length > 0) {
+      setItems(ALL_MOCK_ITEMS.filter(item => listIds.includes(item.listId)));
+    }
+  }, [listIds]);
   
   const toggleItemPurchased = (id: string) => {
     setItems(items.map(item => 
@@ -108,8 +119,8 @@ export default function ShoppingSessionScreen() {
     <View style={styles.container}>
       <HeaderWithBack 
         title="Shopping"
-        backTo="/shopping"
-        backTitle="Select Lists"
+        backTo={listIds.length > 0 ? `/lists/${listIds[0]}` : "/shopping"}
+        backTitle={listIds.length > 0 ? "Back to List" : "Select Lists"}
       />
       
       <FlatList
@@ -154,8 +165,10 @@ export default function ShoppingSessionScreen() {
           style={styles.checkoutButton}
           onPress={goToCheckout}
         >
-          <ShoppingBag size={20} color="#FFFFFF" style={styles.buttonIcon} />
-          <Text style={styles.checkoutButtonText}>Go to Checkout</Text>
+          <View style={styles.buttonContainer}>
+            <ShoppingBag size={20} color="#FFFFFF" style={styles.buttonIcon} />
+            <Text style={styles.checkoutButtonText}>Go to Checkout</Text>
+          </View>
         </TouchableOpacity>
       </View>
     </View>
@@ -165,7 +178,7 @@ export default function ShoppingSessionScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F9FAFB',
+    backgroundColor: colors.gray50,
   },
   listContent: {
     padding: 16,
@@ -174,28 +187,28 @@ const styles = StyleSheet.create({
   itemRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.white,
     padding: 16,
     borderRadius: 8,
     marginBottom: 8,
     borderWidth: 1,
-    borderColor: '#E5E7EB',
+    borderColor: colors.gray200,
   },
   itemRowPurchased: {
-    backgroundColor: '#F3F4F6',
+    backgroundColor: colors.gray100,
   },
   checkbox: {
     width: 24,
     height: 24,
     borderRadius: 12,
     borderWidth: 2,
-    borderColor: '#3B82F6',
+    borderColor: colors.primary,
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 12,
   },
   checkboxChecked: {
-    backgroundColor: '#3B82F6',
+    backgroundColor: colors.primary,
   },
   itemDetails: {
     flex: 1,
@@ -203,20 +216,20 @@ const styles = StyleSheet.create({
   itemName: {
     fontSize: 16,
     fontWeight: '500',
-    color: '#111827',
+    color: colors.black,
   },
   itemPurchased: {
     textDecorationLine: 'line-through',
-    color: '#9CA3AF',
+    color: colors.gray400,
   },
   itemQuantity: {
     fontSize: 14,
-    color: '#6B7280',
+    color: colors.gray500,
     marginTop: 2,
   },
   itemSource: {
     fontSize: 12,
-    color: '#9CA3AF',
+    color: colors.gray400,
     marginTop: 4,
   },
   footer: {
@@ -224,15 +237,17 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: 0,
     right: 0,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.white,
     borderTopWidth: 1,
-    borderTopColor: '#E5E7EB',
+    borderTopColor: colors.gray200,
     padding: 16,
   },
   checkoutButton: {
-    backgroundColor: '#3B82F6',
+    backgroundColor: colors.primary,
     borderRadius: 8,
     padding: 16,
+  },
+  buttonContainer: {
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
@@ -241,7 +256,7 @@ const styles = StyleSheet.create({
     marginRight: 8,
   },
   checkoutButtonText: {
-    color: '#FFFFFF',
+    color: colors.white,
     fontSize: 16,
     fontWeight: '600',
   },
@@ -251,39 +266,39 @@ const styles = StyleSheet.create({
   listTitle: {
     fontSize: 18,
     fontWeight: '600',
-    color: '#111827',
+    color: colors.black,
     marginBottom: 12,
-    backgroundColor: '#E5E7EB',
+    backgroundColor: colors.gray200,
     padding: 8,
     borderRadius: 4,
   },
   checkoutItem: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.white,
     padding: 12,
     borderRadius: 8,
     marginBottom: 8,
     borderWidth: 1,
-    borderColor: '#E5E7EB',
+    borderColor: colors.gray200,
     flexDirection: 'row',
     justifyContent: 'space-between',
   },
   checkoutItemName: {
     fontSize: 16,
-    color: '#111827',
+    color: colors.black,
   },
   checkoutItemQuantity: {
     fontSize: 14,
-    color: '#6B7280',
+    color: colors.gray500,
   },
   endButton: {
-    backgroundColor: '#EF4444',
+    backgroundColor: colors.danger,
     borderRadius: 8,
     padding: 16,
     margin: 16,
     alignItems: 'center',
   },
   endButtonText: {
-    color: '#FFFFFF',
+    color: colors.white,
     fontSize: 16,
     fontWeight: '600',
   },

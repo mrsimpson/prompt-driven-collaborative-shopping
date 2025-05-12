@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 import { View, Text, FlatList, TouchableOpacity, TextInput } from 'react-native';
-import { useLocalSearchParams } from 'expo-router';
-import { Plus, Check, Trash2 } from 'lucide-react-native';
+import { useLocalSearchParams, router } from 'expo-router';
+import { Plus, Check, Trash2, ShoppingBag } from 'lucide-react-native';
 import { HeaderWithBack } from '@/src/components/HeaderWithBack';
-import { layout, lists, checkboxes, colors, buttons } from '@/src/styles/common';
+import { layout, lists, checkboxes, colors, buttons, typography } from '@/src/styles/common';
 
 // Mock data - will be replaced with actual data from Dexie.js
 const MOCK_LISTS = {
@@ -97,6 +97,19 @@ const styles = {
   deleteButton: {
     padding: 8,
   },
+  footer: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: colors.white,
+    borderTopWidth: 1,
+    borderTopColor: colors.gray200,
+    padding: 16,
+  },
+  buttonIcon: {
+    marginRight: 8,
+  },
 };
 
 export default function ListDetailScreen() {
@@ -139,6 +152,19 @@ export default function ListDetailScreen() {
   const deleteItem = (itemId: string) => {
     // This would delete the item from Dexie.js
     console.log(`Delete item ${itemId}`);
+  };
+
+  const startShoppingWithThisList = () => {
+    // In a real implementation, this would create a shopping session
+    // with just this list using our ShoppingSessionService
+    console.log(`Starting shopping with list: ${list.id}`);
+    
+    // Store the selected list ID in a global state or pass it as a parameter
+    // For now, we'll just navigate to the shopping session screen
+    router.push({
+      pathname: '/shopping/session',
+      params: { listIds: list.id }
+    });
   };
   
   return (
@@ -213,8 +239,20 @@ export default function ListDetailScreen() {
             </TouchableOpacity>
           </View>
         )}
-        contentContainerStyle={lists.content}
+        contentContainerStyle={[lists.content, { paddingBottom: 80 }]} // Extra padding for the footer
       />
+
+      <View style={styles.footer}>
+        <TouchableOpacity 
+          style={buttons.primary}
+          onPress={startShoppingWithThisList}
+        >
+          <View style={buttons.iconText}>
+            <ShoppingBag size={20} color={colors.white} style={styles.buttonIcon} />
+            <Text style={typography.buttonText}>Shop with this list</Text>
+          </View>
+        </TouchableOpacity>
+      </View>
     </View>
   );
 }

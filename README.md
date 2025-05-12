@@ -22,17 +22,28 @@ The Shopping Companion App follows a local-first architecture with real-time syn
 
 For detailed architecture information, see the [Architecture Documentation](./docs/arc42.md).
 
+## State Management Approach
+
+The Shopping Companion App uses a page-oriented architecture with minimal global state:
+
+- **Authentication Context**: The only global context, used for user login state and local mode detection
+- **URL Parameters**: Used for passing IDs and other data between screens (e.g., `/lists/[id]`, `/shopping/session?listIds=1,2,3`)
+- **Local Storage**: Dexie.js for persisting data between sessions
+- **Page-Specific State**: Each page manages its own UI state using React's useState/useEffect
+
+This approach keeps the application simple and maintainable while still allowing for complex workflows.
+
 ## Tech Stack
 
 - **Frontend Framework**: React Native
 - **Development Platform**: Expo
-- **State Management**: React Context API with custom hooks
+- **Navigation**: Expo Router
 - **Local Database**: Dexie.js
 - **Backend Services**: Supabase
 - **Authentication**: Supabase Auth
 - **Real-time Communication**: Supabase Realtime
 - **Testing**: Jest and React Native Testing Library
-- **Styling**: React Native Paper
+- **Styling**: Custom styling system with centralized theme
 
 ## Getting Started
 
@@ -162,6 +173,8 @@ shopping-companion-app/
 │   ├── types/             # TypeScript type definitions
 │   │   ├── models.ts      # Domain models
 │   │   └── operations.ts  # Operation parameters and results
+│   ├── contexts/          # React Context providers
+│   │   └── AuthContext.tsx # Authentication context
 │   └── utils/             # Utility functions
 │       ├── uuid.ts        # UUID generation
 │       └── validation/    # Input validation
@@ -194,6 +207,23 @@ The project follows a clear separation of concerns:
 ### Data Layer
 - **src/stores/**: Dexie.js database definition
 - **supabase/**: Backend configuration and migrations
+
+## Data Flow
+
+1. **Page-to-Page Navigation**:
+   - List IDs are passed as URL parameters: `/lists/[id]`
+   - Multiple list IDs can be passed as query parameters: `/shopping/session?listIds=1,2,3`
+   - Each page fetches its own data using the service layer
+
+2. **Authentication State**:
+   - Managed through AuthContext
+   - Provides login state and local mode detection across the app
+   - Used by the LocalModeHeader component to show the local mode banner
+
+3. **Service Layer**:
+   - Each page component calls service methods directly
+   - Services abstract the data access logic
+   - Repository implementations handle the actual data storage
 
 ## Backend Logic
 
