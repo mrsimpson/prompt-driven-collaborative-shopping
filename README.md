@@ -143,33 +143,57 @@ yarn test --coverage
 
 ```text
 shopping-companion-app/
-├── app/                   # Expo Router app directory
+├── app/                   # Expo Router app directory (must remain at root level)
 │   ├── (auth)/            # Authentication screens
 │   ├── (tabs)/            # Main app tabs
 │   ├── _layout.tsx        # Root layout
 │   └── index.tsx          # Entry point
-├── components/            # Reusable components
-├── hooks/                 # Custom React hooks
-├── services/              # API and service functions
-│   ├── supabase.ts        # Supabase client setup
-│   └── sync.ts            # Data synchronization logic
-├── stores/                # Dexie.js store definitions
-├── types/                 # TypeScript type definitions
-├── utils/                 # Utility functions
+├── src/                   # Source code directory
+│   ├── app.tsx            # Main app component
+│   ├── components/        # Reusable UI components
+│   ├── hooks/             # Custom React hooks
+│   ├── repositories/      # Data access layer
+│   ├── services/          # Business logic services
+│   │   ├── shopping-list-service.ts
+│   │   ├── shopping-session-service.ts
+│   │   └── user-service.ts
+│   ├── stores/            # Dexie.js store definitions
+│   │   └── database.ts    # Database schema and initialization
+│   ├── types/             # TypeScript type definitions
+│   │   ├── models.ts      # Domain models
+│   │   └── operations.ts  # Operation parameters and results
+│   └── utils/             # Utility functions
+│       ├── uuid.ts        # UUID generation
+│       └── validation/    # Input validation
 ├── supabase/              # Supabase configuration files
 │   ├── migrations/        # Database migrations
-│   │   ├── 20250509000000_initial_schema.sql
-│   │   ├── 20250509000001_rls_policies.sql
-│   │   └── 20250509000002_triggers.sql
-│   ├── seed.sql           # Seed data for development
-│   └── config.toml        # Supabase configuration
+│   └── seed.sql           # Seed data for development
 ├── docs/                  # Documentation
 │   ├── pdd.md             # Product Design Document
-|   ├── arc42.md           # Architecture documentation
+│   ├── arc42.md           # Architecture documentation
 │   └── data-model.md      # Data Model details
 ├── app.json               # Expo configuration
+├── tsconfig.json          # TypeScript configuration
 └── package.json           # Project dependencies
 ```
+
+## Code Organization
+
+The project follows a clear separation of concerns:
+
+### UI Layer
+- **app/**: Contains all Expo Router screens and navigation
+- **src/components/**: Reusable UI components
+- **src/hooks/**: Custom React hooks for UI logic
+
+### Business Logic Layer
+- **src/services/**: Service interfaces and implementations
+- **src/repositories/**: Data access interfaces and implementations
+- **src/types/**: Domain models and operation types
+
+### Data Layer
+- **src/stores/**: Dexie.js database definition
+- **supabase/**: Backend configuration and migrations
 
 ## Backend Logic
 
@@ -194,22 +218,6 @@ Located in `supabase/functions/` directory, these handle more complex operations
 - Business logic that requires multiple database operations
 
 This approach ensures data consistency is maintained at the database level rather than relying on client-side enforcement.
-
-1. **Feature Development**:
-
-   - Create a new branch for each feature
-   - Implement the feature with appropriate tests
-   - Submit a pull request for review
-
-2. **Testing**:
-
-   - Write unit tests for all components and services
-   - Run the test suite before submitting pull requests
-   - Aim for >80% test coverage
-
-3. **Deployment**:
-   - Staging builds are created automatically for pull requests
-   - Production builds require manual approval
 
 ## Development Workflow
 

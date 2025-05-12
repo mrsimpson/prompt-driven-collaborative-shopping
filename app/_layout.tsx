@@ -1,6 +1,6 @@
 import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
-import { useFrameworkReady } from "@/hooks/useFrameworkReady";
+import { useFrameworkReady } from "@/src/hooks/useFrameworkReady";
 import { AppProvider } from "../src/app";
 
 export default function RootLayout() {
