@@ -2,24 +2,27 @@
 const { defineConfig } = require('eslint/config');
 const expoConfig = require("eslint-config-expo/flat");
 const jestPlugin = require('eslint-plugin-jest');
+const eslintConfigPrettier = require('eslint-config-prettier/flat');
 
-module.exports = defineConfig([
-  {
-    // Explicitly ignore all files in the dist directory
-    ignores: ["**/dist/**", "dist/**"]
-  },
-  expoConfig,
-  {
-    plugins: {
-      jest: jestPlugin
+
+module.exports =
+  defineConfig([
+    {
+      ignores: ["**/dist/**", "dist/**"]
     },
-    // Include Jest recommended rules
-    rules: {
-      'jest/no-disabled-tests': 'warn',
-      'jest/no-focused-tests': 'error',
-      'jest/no-identical-title': 'error',
-      'jest/prefer-to-have-length': 'warn',
-      'jest/valid-expect': 'error'
-    }
-  }
-]);
+    expoConfig,
+    {
+      plugins: {
+        jest: jestPlugin
+      },
+      // Include Jest recommended rules
+      rules: {
+        'jest/no-disabled-tests': 'warn',
+        'jest/no-focused-tests': 'error',
+        'jest/no-identical-title': 'error',
+        'jest/prefer-to-have-length': 'warn',
+        'jest/valid-expect': 'error'
+      }
+    },
+    eslintConfigPrettier
+  ])
