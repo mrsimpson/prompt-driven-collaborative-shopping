@@ -15,6 +15,7 @@ export function useShoppingSession(sessionId?: string) {
   const [error, setError] = useState<Error | null>(null);
   
   const shoppingSessionService = ServiceFactory.getShoppingSessionService();
+  const shoppingListService = ServiceFactory.getShoppingListService();
   
   // Fetch existing session if sessionId is provided
   const fetchSession = useCallback(async () => {
@@ -24,14 +25,32 @@ export function useShoppingSession(sessionId?: string) {
       setLoading(true);
       setError(null);
       
-      const sessionData = await shoppingSessionService.getSessionById(sessionId);
-      setSession(sessionData);
+      // Get session data
+      const sessionResult = await shoppingSessionService.getActiveSession("default-user-id");
       
-      const sessionLists = await shoppingSessionService.getSessionLists(sessionId);
-      setLists(sessionLists);
+      if (!sessionResult.success || !sessionResult.data) {
+        throw new Error(sessionResult.error || 'Session not found');
+      }
       
-      const sessionItems = await shoppingSessionService.getSessionItems(sessionId);
-      setItems(sessionItems);
+      setSession(sessionResult.data);
+      
+      // Get session with lists
+      const sessionWithListsResult = await shoppingSessionService.getSessionWithLists(sessionId);
+      
+      if (!sessionWithListsResult.success) {
+        throw new Error(sessionWithListsResult.error);
+      }
+      
+      setLists(sessionWithListsResult.lists);
+      
+      // Get consolidated items
+      const itemsResult = await shoppingSessionService.getConsolidatedItems(sessionId);
+      
+      if (!itemsResult.success) {
+        throw new Error(itemsResult.error);
+      }
+      
+      setItems(itemsResult.data);
     } catch (err) {
       setError(err instanceof Error ? err : new Error('Failed to fetch shopping session'));
       console.error('Error fetching shopping session:', err);
@@ -52,14 +71,40 @@ export function useShoppingSession(sessionId?: string) {
       setLoading(true);
       setError(null);
       
-      const newSession = await shoppingSessionService.createShoppingSession(listIds);
+      // Default user ID for local mode
+      const defaultUserId = "default-user-id";
+      
+      // Create a new shopping session
+      const sessionResult = await shoppingSessionService.createSession({
+        userId: defaultUserId,
+        listIds: listIds
+      });
+      
+      if (!sessionResult.success) {
+        throw new Error(sessionResult.error);
+      }
+      
+      const newSession = sessionResult.data;
       setSession(newSession);
       
-      const sessionLists = await shoppingSessionService.getSessionLists(newSession.id);
-      setLists(sessionLists);
+      // Get the lists for this session
+      const listsPromises = listIds.map(id => shoppingListService.getList(id));
+      const listsResults = await Promise.all(listsPromises);
       
-      const sessionItems = await shoppingSessionService.getSessionItems(newSession.id);
-      setItems(sessionItems);
+      const validLists = listsResults
+        .filter(result => result.success)
+        .map(result => result.data);
+      
+      setLists(validLists);
+      
+      // Get consolidated items
+      const itemsResult = await shoppingSessionService.getConsolidatedItems(newSession.id);
+      
+      if (!itemsResult.success) {
+        throw new Error(itemsResult.error);
+      }
+      
+      setItems(itemsResult.data);
       
       return newSession;
     } catch (err) {
@@ -69,7 +114,7 @@ export function useShoppingSession(sessionId?: string) {
     } finally {
       setLoading(false);
     }
-  }, [shoppingSessionService]);
+  }, [shoppingSessionService, shoppingListService]);
   
   // Mark an item as purchased during shopping
   const markItemAsPurchased = useCallback(async (itemId: string, isPurchased: boolean = true) => {
@@ -79,23 +124,40 @@ export function useShoppingSession(sessionId?: string) {
     
     try {
       setError(null);
-      const updatedItem = await shoppingSessionService.markItemAsPurchased(
-        session.id, 
-        itemId, 
-        isPurchased
-      );
       
+      // Find the item to update
+      const item = items.find(i => i.id === itemId);
+      
+      if (!item) {
+        throw new Error('Item not found');
+      }
+      
+      // Update the item
+      const result = await shoppingListService.updateListItem({
+        id: itemId,
+        listId: item.listId,
+        isPurchased,
+        purchasedAt: isPurchased ? new Date() : undefined,
+        // In a real app with authentication, we would include the current user ID
+        // purchasedBy: isPurchased ? currentUserId : undefined
+      });
+      
+      if (!result.success) {
+        throw new Error(result.error);
+      }
+      
+      // Update local state
       setItems(prevItems => 
-        prevItems.map(item => item.id === itemId ? updatedItem : item)
+        prevItems.map(i => i.id === itemId ? result.data : i)
       );
       
-      return updatedItem;
+      return result.data;
     } catch (err) {
       setError(err instanceof Error ? err : new Error('Failed to mark item as purchased'));
       console.error('Error marking item as purchased:', err);
       throw err;
     }
-  }, [session, shoppingSessionService]);
+  }, [session, items, shoppingListService]);
   
   // End the shopping session
   const endSession = useCallback(async (createNewListForUnpurchased: boolean = true) => {
@@ -107,16 +169,20 @@ export function useShoppingSession(sessionId?: string) {
       setLoading(true);
       setError(null);
       
-      const result = await shoppingSessionService.endShoppingSession(
-        session.id, 
+      const result = await shoppingSessionService.endSession({
+        sessionId: session.id,
         createNewListForUnpurchased
-      );
+      });
+      
+      if (!result.success) {
+        throw new Error(result.error);
+      }
       
       setSession(null);
       setLists([]);
       setItems([]);
       
-      return result;
+      return result.data;
     } catch (err) {
       setError(err instanceof Error ? err : new Error('Failed to end shopping session'));
       console.error('Error ending shopping session:', err);

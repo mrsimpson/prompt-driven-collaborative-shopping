@@ -17,8 +17,19 @@ export function useShoppingLists() {
     try {
       setLoading(true);
       setError(null);
-      const result = await shoppingListService.getAllLists();
-      setLists(result);
+      
+      // Get the current user's lists
+      // In a real implementation with authentication, we would use the current user's ID
+      // For now, we'll use a default user ID that matches what's in the database initialization
+      const defaultUserId = "default-user-id";
+      
+      const result = await shoppingListService.getUserLists(defaultUserId);
+      
+      if (result.success) {
+        setLists(result.data);
+      } else {
+        throw new Error(result.error);
+      }
     } catch (err) {
       setError(err instanceof Error ? err : new Error('Failed to fetch shopping lists'));
       console.error('Error fetching shopping lists:', err);
@@ -34,9 +45,19 @@ export function useShoppingLists() {
   const createList = useCallback(async (name: string, description: string) => {
     try {
       setError(null);
-      const newList = await shoppingListService.createList(name, description);
-      setLists(prevLists => [...prevLists, newList]);
-      return newList;
+      const defaultUserId = "default-user-id";
+      
+      const result = await shoppingListService.createList(
+        { name, description },
+        defaultUserId
+      );
+      
+      if (!result.success) {
+        throw new Error(result.error);
+      }
+      
+      setLists(prevLists => [...prevLists, result.data]);
+      return result.data;
     } catch (err) {
       setError(err instanceof Error ? err : new Error('Failed to create shopping list'));
       console.error('Error creating shopping list:', err);
@@ -47,11 +68,22 @@ export function useShoppingLists() {
   const updateList = useCallback(async (listId: string, updates: Partial<ShoppingList>) => {
     try {
       setError(null);
-      const updatedList = await shoppingListService.updateList(listId, updates);
-      setLists(prevLists => 
-        prevLists.map(list => list.id === listId ? updatedList : list)
+      const defaultUserId = "default-user-id";
+      
+      const result = await shoppingListService.updateList(
+        { id: listId, ...updates },
+        defaultUserId
       );
-      return updatedList;
+      
+      if (!result.success) {
+        throw new Error(result.error);
+      }
+      
+      setLists(prevLists => 
+        prevLists.map(list => list.id === listId ? result.data : list)
+      );
+      
+      return result.data;
     } catch (err) {
       setError(err instanceof Error ? err : new Error('Failed to update shopping list'));
       console.error('Error updating shopping list:', err);
@@ -62,7 +94,14 @@ export function useShoppingLists() {
   const deleteList = useCallback(async (listId: string) => {
     try {
       setError(null);
-      await shoppingListService.deleteList(listId);
+      const defaultUserId = "default-user-id";
+      
+      const result = await shoppingListService.deleteList(listId, defaultUserId);
+      
+      if (!result.success) {
+        throw new Error(result.error);
+      }
+      
       setLists(prevLists => prevLists.filter(list => list.id !== listId));
     } catch (err) {
       setError(err instanceof Error ? err : new Error('Failed to delete shopping list'));

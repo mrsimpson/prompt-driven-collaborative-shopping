@@ -1,201 +1,280 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TextInput, TouchableOpacity, Alert } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, TextInput, ActivityIndicator, Alert } from 'react-native';
+import { layout, typography, colors, buttons, forms } from '@/src/styles/common';
 import { useAuth } from '@/src/contexts/AuthContext';
+import { useUser } from '@/src/hooks';
 
 export default function ProfileScreen() {
   const { isAuthenticated, isLocalMode, login, logout } = useAuth();
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-
-  const handleLogin = async () => {
-    if (!email || !password) {
-      Alert.alert('Error', 'Please enter both email and password');
-      return;
-    }
+  const { user, loading, error, updateProfile } = useUser();
+  
+  const [isEditing, setIsEditing] = useState(false);
+  const [username, setUsername] = useState(user?.username || '');
+  const [email, setEmail] = useState(user?.email || '');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  
+  // For login form
+  const [loginEmail, setLoginEmail] = useState('');
+  const [loginPassword, setLoginPassword] = useState('');
+  const [isLoggingIn, setIsLoggingIn] = useState(false);
+  
+  const handleUpdateProfile = async () => {
+    if (!user) return;
     
     try {
-      await login(email, password);
-      // Clear form after login
-      setEmail('');
-      setPassword('');
-    } catch {
-      Alert.alert('Login Failed', 'Invalid email or password');
+      setIsSubmitting(true);
+      await updateProfile({
+        username,
+        email
+      });
+      setIsEditing(false);
+      Alert.alert('Success', 'Profile updated successfully');
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to update profile';
+      Alert.alert('Error', errorMessage);
+    } finally {
+      setIsSubmitting(false);
     }
   };
-
-  const handleLogout = () => {
-    logout();
+  
+  const handleLogin = async () => {
+    try {
+      setIsLoggingIn(true);
+      await login(loginEmail, loginPassword);
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to log in';
+      Alert.alert('Error', errorMessage);
+    } finally {
+      setIsLoggingIn(false);
+    }
   };
-
-  if (isAuthenticated) {
+  
+  const handleLogout = async () => {
+    try {
+      await logout();
+      Alert.alert('Success', 'Logged out successfully');
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to log out';
+      Alert.alert('Error', errorMessage);
+    }
+  };
+  
+  if (loading) {
     return (
-      <View style={styles.container}>
-        <View style={styles.header}>
-          <Text style={styles.title}>My Profile</Text>
-        </View>
-        
-        <View style={styles.profileContainer}>
-          <View style={styles.avatarPlaceholder}>
-            <Text style={styles.avatarText}>U</Text>
-          </View>
-          
-          <Text style={styles.userName}>User</Text>
-          <Text style={styles.userEmail}>{email || 'user@example.com'}</Text>
-          
-          <TouchableOpacity 
-            style={styles.logoutButton} 
-            onPress={handleLogout}
-          >
-            <Text style={styles.logoutButtonText}>Log Out</Text>
-          </TouchableOpacity>
-        </View>
+      <View style={[layout.container, layout.centered]}>
+        <ActivityIndicator size="large" color={colors.primary} />
+        <Text style={[typography.body, { marginTop: 16 }]}>Loading profile...</Text>
       </View>
     );
   }
-
-  return (
-    <View style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.title}>Sign In</Text>
-      </View>
-      
-      <View style={styles.formContainer}>
-        <Text style={styles.formLabel}>Email</Text>
-        <TextInput
-          style={styles.input}
-          value={email}
-          onChangeText={setEmail}
-          placeholder="Enter your email"
-          keyboardType="email-address"
-          autoCapitalize="none"
-        />
-        
-        <Text style={styles.formLabel}>Password</Text>
-        <TextInput
-          style={styles.input}
-          value={password}
-          onChangeText={setPassword}
-          placeholder="Enter your password"
-          secureTextEntry
-        />
-        
+  
+  if (error) {
+    return (
+      <View style={[layout.container, layout.centered]}>
+        <Text style={[typography.body, { color: colors.danger, marginBottom: 16 }]}>
+          {error.message || 'Failed to load profile'}
+        </Text>
         <TouchableOpacity 
-          style={styles.loginButton} 
-          onPress={handleLogin}
+          style={buttons.secondary}
+          onPress={() => window.location.reload()}
         >
-          <Text style={styles.loginButtonText}>Sign In</Text>
+          <Text style={typography.buttonTextSecondary}>Reload</Text>
         </TouchableOpacity>
-        
+      </View>
+    );
+  }
+  
+  return (
+    <View style={layout.container}>
+      <View style={styles.header}>
+        <Text style={typography.title}>Profile</Text>
         {isLocalMode && (
-          <View style={styles.localModeInfo}>
-            <Text style={styles.localModeText}>
-              You are currently in local mode. Sign in to sync your data across devices.
-            </Text>
+          <View style={styles.localModeBadge}>
+            <Text style={styles.localModeText}>Local Mode</Text>
           </View>
         )}
       </View>
+      
+      {user ? (
+        <View style={styles.profileContainer}>
+          {isEditing ? (
+            // Edit mode
+            <View style={styles.editForm}>
+              <Text style={forms.label}>Username</Text>
+              <TextInput
+                style={forms.input}
+                value={username}
+                onChangeText={setUsername}
+                placeholder="Enter username"
+                editable={!isSubmitting}
+              />
+              
+              <Text style={forms.label}>Email</Text>
+              <TextInput
+                style={forms.input}
+                value={email}
+                onChangeText={setEmail}
+                placeholder="Enter email"
+                keyboardType="email-address"
+                editable={!isSubmitting}
+              />
+              
+              <View style={styles.buttonRow}>
+                <TouchableOpacity 
+                  style={[buttons.secondary, styles.buttonHalf]}
+                  onPress={() => setIsEditing(false)}
+                  disabled={isSubmitting}
+                >
+                  <Text style={typography.buttonTextSecondary}>Cancel</Text>
+                </TouchableOpacity>
+                
+                <TouchableOpacity 
+                  style={[buttons.primary, styles.buttonHalf, isSubmitting && buttons.primaryDisabled]}
+                  onPress={handleUpdateProfile}
+                  disabled={isSubmitting}
+                >
+                  {isSubmitting ? (
+                    <ActivityIndicator size="small" color={colors.white} />
+                  ) : (
+                    <Text style={typography.buttonText}>Save</Text>
+                  )}
+                </TouchableOpacity>
+              </View>
+            </View>
+          ) : (
+            // View mode
+            <View>
+              <View style={styles.profileField}>
+                <Text style={styles.fieldLabel}>Username</Text>
+                <Text style={styles.fieldValue}>{user.username}</Text>
+              </View>
+              
+              <View style={styles.profileField}>
+                <Text style={styles.fieldLabel}>Email</Text>
+                <Text style={styles.fieldValue}>{user.email}</Text>
+              </View>
+              
+              <View style={styles.buttonRow}>
+                <TouchableOpacity 
+                  style={[buttons.secondary, styles.buttonHalf]}
+                  onPress={() => setIsEditing(true)}
+                >
+                  <Text style={typography.buttonTextSecondary}>Edit Profile</Text>
+                </TouchableOpacity>
+                
+                <TouchableOpacity 
+                  style={[buttons.danger, styles.buttonHalf]}
+                  onPress={handleLogout}
+                >
+                  <Text style={typography.buttonText}>Logout</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          )}
+        </View>
+      ) : (
+        // Login form
+        <View style={styles.loginContainer}>
+          <Text style={typography.subtitle}>Login to Your Account</Text>
+          
+          <Text style={forms.label}>Email</Text>
+          <TextInput
+            style={forms.input}
+            value={loginEmail}
+            onChangeText={setLoginEmail}
+            placeholder="Enter your email"
+            keyboardType="email-address"
+            editable={!isLoggingIn}
+          />
+          
+          <Text style={forms.label}>Password</Text>
+          <TextInput
+            style={forms.input}
+            value={loginPassword}
+            onChangeText={setLoginPassword}
+            placeholder="Enter your password"
+            secureTextEntry
+            editable={!isLoggingIn}
+          />
+          
+          <TouchableOpacity 
+            style={[
+              buttons.primary, 
+              { marginTop: 16 },
+              isLoggingIn && buttons.primaryDisabled
+            ]}
+            onPress={handleLogin}
+            disabled={isLoggingIn || !loginEmail || !loginPassword}
+          >
+            {isLoggingIn ? (
+              <ActivityIndicator size="small" color={colors.white} />
+            ) : (
+              <Text style={typography.buttonText}>Login</Text>
+            )}
+          </TouchableOpacity>
+          
+          <Text style={styles.localModeInfo}>
+            You are currently in local mode. All data is stored only on your device.
+          </Text>
+        </View>
+      )}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#F9FAFB',
-  },
   header: {
-    paddingHorizontal: 16,
-    paddingVertical: 16,
-    backgroundColor: '#FFFFFF',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 16,
     borderBottomWidth: 1,
-    borderBottomColor: '#E5E7EB',
+    borderBottomColor: colors.gray200,
   },
-  title: {
-    fontSize: 20,
+  localModeBadge: {
+    backgroundColor: colors.primaryLight,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
+  },
+  localModeText: {
+    color: colors.primaryDark,
     fontWeight: '600',
-    color: '#111827',
+    fontSize: 12,
   },
-  formContainer: {
+  profileContainer: {
     padding: 16,
   },
-  formLabel: {
-    fontSize: 14,
-    fontWeight: '500',
-    color: '#374151',
-    marginBottom: 8,
-  },
-  input: {
-    backgroundColor: '#FFFFFF',
-    borderWidth: 1,
-    borderColor: '#D1D5DB',
-    borderRadius: 6,
-    padding: 12,
-    fontSize: 16,
+  profileField: {
     marginBottom: 16,
   },
-  loginButton: {
-    backgroundColor: '#3B82F6',
-    borderRadius: 6,
-    padding: 14,
-    alignItems: 'center',
-    marginTop: 8,
+  fieldLabel: {
+    fontSize: 14,
+    color: colors.gray500,
+    marginBottom: 4,
   },
-  loginButtonText: {
-    color: '#FFFFFF',
+  fieldValue: {
     fontSize: 16,
-    fontWeight: '500',
+    color: colors.black,
+  },
+  buttonRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: 24,
+  },
+  buttonHalf: {
+    flex: 0.48,
+  },
+  editForm: {
+    marginBottom: 16,
+  },
+  loginContainer: {
+    padding: 16,
   },
   localModeInfo: {
     marginTop: 24,
-    padding: 16,
-    backgroundColor: '#FEF3C7',
-    borderRadius: 6,
-    borderWidth: 1,
-    borderColor: '#F59E0B',
-  },
-  localModeText: {
-    color: '#92400E',
+    textAlign: 'center',
+    color: colors.gray500,
     fontSize: 14,
-  },
-  profileContainer: {
-    padding: 24,
-    alignItems: 'center',
-  },
-  avatarPlaceholder: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: '#3B82F6',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  avatarText: {
-    fontSize: 32,
-    fontWeight: 'bold',
-    color: '#FFFFFF',
-  },
-  userName: {
-    fontSize: 24,
-    fontWeight: '600',
-    color: '#111827',
-    marginBottom: 4,
-  },
-  userEmail: {
-    fontSize: 16,
-    color: '#6B7280',
-    marginBottom: 24,
-  },
-  logoutButton: {
-    backgroundColor: '#EF4444',
-    borderRadius: 6,
-    padding: 14,
-    alignItems: 'center',
-    width: '100%',
-  },
-  logoutButtonText: {
-    color: '#FFFFFF',
-    fontSize: 16,
-    fontWeight: '500',
   },
 });

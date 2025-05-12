@@ -1,25 +1,35 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, ActivityIndicator, Alert } from 'react-native';
 import { router } from 'expo-router';
 import { HeaderWithBack } from '@/src/components/HeaderWithBack';
-import { layout, forms, buttons, typography } from '@/src/styles/common';
+import { layout, forms, buttons, typography, colors } from '@/src/styles/common';
+import { useShoppingLists } from '@/src/hooks';
 
 export default function NewListScreen() {
   const [listName, setListName] = useState('');
   const [listDescription, setListDescription] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
   
-  const createList = () => {
+  const { createList } = useShoppingLists();
+  
+  const handleCreateList = async () => {
     if (!listName.trim()) {
-      // Show error - would use a proper alert/toast in a real implementation
-      console.log('List name is required');
+      Alert.alert('Error', 'List name is required');
       return;
     }
     
-    // In a real implementation, this would call our ShoppingListService
-    console.log(`Creating new list: ${listName}, ${listDescription}`);
-    
-    // Navigate back to the lists screen
-    router.replace('/lists');
+    try {
+      setIsSubmitting(true);
+      await createList(listName, listDescription);
+      
+      // Navigate back to the lists screen
+      router.replace('/lists');
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to create list';
+      Alert.alert('Error', errorMessage);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
   
   return (
@@ -37,6 +47,7 @@ export default function NewListScreen() {
           value={listName}
           onChangeText={setListName}
           placeholder="Enter list name"
+          editable={!isSubmitting}
         />
         
         <Text style={forms.label}>Description (Optional)</Text>
@@ -47,17 +58,22 @@ export default function NewListScreen() {
           placeholder="Enter list description"
           multiline
           numberOfLines={4}
+          editable={!isSubmitting}
         />
         
         <TouchableOpacity 
           style={[
             buttons.primary,
-            !listName.trim() && buttons.primaryDisabled
+            (!listName.trim() || isSubmitting) && buttons.primaryDisabled
           ]}
-          onPress={createList}
-          disabled={!listName.trim()}
+          onPress={handleCreateList}
+          disabled={!listName.trim() || isSubmitting}
         >
-          <Text style={typography.buttonText}>Create List</Text>
+          {isSubmitting ? (
+            <ActivityIndicator size="small" color={colors.white} />
+          ) : (
+            <Text style={typography.buttonText}>Create List</Text>
+          )}
         </TouchableOpacity>
       </View>
     </View>

@@ -1,47 +1,10 @@
 import React, { useState } from 'react';
-import { View, Text, FlatList, TouchableOpacity, TextInput } from 'react-native';
+import { View, Text, FlatList, TouchableOpacity, TextInput, ActivityIndicator, Alert } from 'react-native';
 import { useLocalSearchParams, router } from 'expo-router';
 import { Plus, Check, Trash2, ShoppingBag } from 'lucide-react-native';
 import { HeaderWithBack } from '@/src/components/HeaderWithBack';
 import { layout, lists, checkboxes, colors, buttons, typography } from '@/src/styles/common';
-
-// Mock data - will be replaced with actual data from Dexie.js
-const MOCK_LISTS = {
-  '1': {
-    id: '1',
-    name: 'Grocery List',
-    items: [
-      { id: '101', name: 'Milk', quantity: 1, unit: 'gallon', isPurchased: false },
-      { id: '102', name: 'Eggs', quantity: 12, unit: 'pcs', isPurchased: true },
-      { id: '103', name: 'Bread', quantity: 1, unit: 'loaf', isPurchased: false },
-      { id: '104', name: 'Apples', quantity: 5, unit: 'pcs', isPurchased: false },
-      { id: '105', name: 'Chicken', quantity: 2, unit: 'lbs', isPurchased: false },
-    ]
-  },
-  '2': {
-    id: '2',
-    name: 'Hardware Store',
-    items: [
-      { id: '201', name: 'Screws', quantity: 20, unit: 'pcs', isPurchased: false },
-      { id: '202', name: 'Paint', quantity: 1, unit: 'gallon', isPurchased: false },
-      { id: '203', name: 'Sandpaper', quantity: 5, unit: 'sheets', isPurchased: false },
-    ]
-  },
-  '3': {
-    id: '3',
-    name: 'Birthday Party',
-    items: [
-      { id: '301', name: 'Balloons', quantity: 20, unit: 'pcs', isPurchased: false },
-      { id: '302', name: 'Cake', quantity: 1, unit: '', isPurchased: false },
-      { id: '303', name: 'Candles', quantity: 12, unit: 'pcs', isPurchased: false },
-      { id: '304', name: 'Party hats', quantity: 10, unit: 'pcs', isPurchased: false },
-      { id: '305', name: 'Napkins', quantity: 50, unit: 'pcs', isPurchased: false },
-      { id: '306', name: 'Plates', quantity: 20, unit: 'pcs', isPurchased: false },
-      { id: '307', name: 'Cups', quantity: 20, unit: 'pcs', isPurchased: false },
-      { id: '308', name: 'Juice', quantity: 2, unit: 'gallons', isPurchased: false },
-    ]
-  }
-};
+import { useListItems, useShoppingLists } from '@/src/hooks';
 
 const styles = {
   addItemForm: {
@@ -110,67 +73,132 @@ const styles = {
   buttonIcon: {
     marginRight: 8,
   },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  errorContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 16,
+  },
+  errorText: {
+    color: colors.danger,
+    textAlign: 'center',
+    marginBottom: 16,
+  },
 };
 
 export default function ListDetailScreen() {
   const { id } = useLocalSearchParams();
-  const listId = Array.isArray(id) ? id[0] : id;
+  const listId = Array.isArray(id) ? id[0] : id || '';
   
-  // In a real implementation, we would fetch this from Dexie.js
-  const list = MOCK_LISTS[listId as keyof typeof MOCK_LISTS];
+  const { lists, loading: listsLoading, error: listsError } = useShoppingLists();
+  const { 
+    items, 
+    loading: itemsLoading, 
+    error: itemsError,
+    addItem,
+    updateItem,
+    removeItem,
+    markItemAsPurchased,
+    refreshItems
+  } = useListItems(listId);
   
   const [newItemName, setNewItemName] = useState('');
   const [newItemQuantity, setNewItemQuantity] = useState('1');
   const [newItemUnit, setNewItemUnit] = useState('');
+  const [isAddingItem, setIsAddingItem] = useState(false);
   
-  if (!list) {
+  // Find the current list from our lists
+  const currentList = lists.find(list => list.id === listId);
+  
+  // Handle loading state
+  if (listsLoading || itemsLoading) {
     return (
-      <View style={layout.container}>
-        <Text>List not found</Text>
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color={colors.primary} />
+        <Text style={[typography.body, { marginTop: 16 }]}>Loading list...</Text>
       </View>
     );
   }
   
-  // These functions would interact with our service layer in a real implementation
-  const toggleItemPurchased = (itemId: string) => {
-    // This would update the item in Dexie.js
-    console.log(`Toggle item ${itemId} purchased status`);
-  };
+  // Handle error state
+  if (listsError || itemsError || !currentList) {
+    return (
+      <View style={styles.errorContainer}>
+        <Text style={styles.errorText}>
+          {listsError?.message || itemsError?.message || 'List not found'}
+        </Text>
+        <TouchableOpacity 
+          style={buttons.secondary} 
+          onPress={() => router.replace('/lists')}
+        >
+          <Text style={typography.buttonTextSecondary}>Back to Lists</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
   
-  const addNewItem = () => {
+  const handleAddItem = async () => {
     if (!newItemName.trim()) return;
     
-    // This would add a new item to the list in Dexie.js
-    console.log(`Add new item: ${newItemName}, ${newItemQuantity} ${newItemUnit}`);
-    
-    // Clear the form
-    setNewItemName('');
-    setNewItemQuantity('1');
-    setNewItemUnit('');
+    try {
+      setIsAddingItem(true);
+      
+      const quantity = parseInt(newItemQuantity, 10) || 1;
+      
+      await addItem({
+        name: newItemName,
+        quantity,
+        unit: newItemUnit,
+        isPurchased: false,
+        listId
+      });
+      
+      // Clear the form
+      setNewItemName('');
+      setNewItemQuantity('1');
+      setNewItemUnit('');
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to add item';
+      Alert.alert('Error', errorMessage);
+    } finally {
+      setIsAddingItem(false);
+    }
   };
   
-  const deleteItem = (itemId: string) => {
-    // This would delete the item from Dexie.js
-    console.log(`Delete item ${itemId}`);
+  const handleToggleItemPurchased = async (itemId: string, currentStatus: boolean) => {
+    try {
+      await markItemAsPurchased(itemId, !currentStatus);
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to update item';
+      Alert.alert('Error', errorMessage);
+    }
+  };
+  
+  const handleDeleteItem = async (itemId: string) => {
+    try {
+      await removeItem(itemId);
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to delete item';
+      Alert.alert('Error', errorMessage);
+    }
   };
 
   const startShoppingWithThisList = () => {
-    // In a real implementation, this would create a shopping session
-    // with just this list using our ShoppingSessionService
-    console.log(`Starting shopping with list: ${list.id}`);
-    
-    // Store the selected list ID in a global state or pass it as a parameter
-    // For now, we'll just navigate to the shopping session screen
     router.push({
       pathname: '/shopping/session',
-      params: { listIds: list.id }
+      params: { listIds: listId }
     });
   };
   
   return (
     <View style={layout.container}>
       <HeaderWithBack 
-        title={list.name}
+        title={currentList.name}
         backTo="/lists"
         backTitle="My Lists"
       />
@@ -181,6 +209,7 @@ export default function ListDetailScreen() {
           value={newItemName}
           onChangeText={setNewItemName}
           placeholder="Add new item..."
+          editable={!isAddingItem}
         />
         <View style={styles.quantityContainer}>
           <TextInput
@@ -188,59 +217,77 @@ export default function ListDetailScreen() {
             value={newItemQuantity}
             onChangeText={setNewItemQuantity}
             keyboardType="numeric"
+            editable={!isAddingItem}
           />
           <TextInput
             style={styles.unitInput}
             value={newItemUnit}
             onChangeText={setNewItemUnit}
             placeholder="unit"
+            editable={!isAddingItem}
           />
         </View>
         <TouchableOpacity 
-          style={buttons.icon}
-          onPress={addNewItem}
+          style={[buttons.icon, isAddingItem && buttons.primaryDisabled]}
+          onPress={handleAddItem}
+          disabled={isAddingItem || !newItemName.trim()}
         >
-          <Plus size={20} color={colors.white} />
+          {isAddingItem ? (
+            <ActivityIndicator size="small" color={colors.white} />
+          ) : (
+            <Plus size={20} color={colors.white} />
+          )}
         </TouchableOpacity>
       </View>
       
-      <FlatList
-        data={list.items}
-        keyExtractor={(item) => item.id}
-        renderItem={({ item }) => (
-          <View style={[layout.row, lists.item]}>
-            <TouchableOpacity 
-              style={[
-                checkboxes.base, 
-                item.isPurchased ? checkboxes.checked : {}
-              ]}
-              onPress={() => toggleItemPurchased(item.id)}
-            >
-              {item.isPurchased && <Check size={16} color={colors.white} />}
-            </TouchableOpacity>
-            
-            <View style={styles.itemDetails}>
-              <Text style={[
-                styles.itemName,
-                item.isPurchased && styles.itemPurchased
-              ]}>
-                {item.name}
-              </Text>
-              <Text style={styles.itemQuantity}>
-                {item.quantity} {item.unit}
-              </Text>
+      {items.length === 0 ? (
+        <View style={[layout.centered, { flex: 1 }]}>
+          <Text style={typography.body}>This list is empty.</Text>
+          <Text style={[typography.bodySmall, { marginTop: 8 }]}>
+            Add items using the form above.
+          </Text>
+        </View>
+      ) : (
+        <FlatList
+          data={items}
+          keyExtractor={(item) => item.id}
+          renderItem={({ item }) => (
+            <View style={[layout.row, lists.item]}>
+              <TouchableOpacity 
+                style={[
+                  checkboxes.base, 
+                  item.isPurchased ? checkboxes.checked : {}
+                ]}
+                onPress={() => handleToggleItemPurchased(item.id, !!item.isPurchased)}
+              >
+                {item.isPurchased && <Check size={16} color={colors.white} />}
+              </TouchableOpacity>
+              
+              <View style={styles.itemDetails}>
+                <Text style={[
+                  styles.itemName,
+                  item.isPurchased && styles.itemPurchased
+                ]}>
+                  {item.name}
+                </Text>
+                <Text style={styles.itemQuantity}>
+                  {item.quantity} {item.unit}
+                </Text>
+              </View>
+              
+              <TouchableOpacity 
+                style={styles.deleteButton}
+                onPress={() => handleDeleteItem(item.id)}
+              >
+                <Trash2 size={18} color={colors.danger} />
+              </TouchableOpacity>
             </View>
-            
-            <TouchableOpacity 
-              style={styles.deleteButton}
-              onPress={() => deleteItem(item.id)}
-            >
-              <Trash2 size={18} color={colors.danger} />
-            </TouchableOpacity>
-          </View>
-        )}
-        contentContainerStyle={[lists.content, { paddingBottom: 80 }]} // Extra padding for the footer
-      />
+          )}
+          contentContainerStyle={[lists.content, { paddingBottom: 80 }]} // Extra padding for the footer
+          refreshing={itemsLoading}
+          onRefresh={refreshItems}
+        />
+      )}
 
       <View style={styles.footer}>
         <TouchableOpacity 

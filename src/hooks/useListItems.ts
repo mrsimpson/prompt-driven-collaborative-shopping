@@ -21,7 +21,12 @@ export function useListItems(listId: string) {
       setLoading(true);
       setError(null);
       const result = await shoppingListService.getListItems(listId);
-      setItems(result);
+      
+      if (result.success) {
+        setItems(result.data);
+      } else {
+        throw new Error(result.error);
+      }
     } catch (err) {
       setError(err instanceof Error ? err : new Error('Failed to fetch list items'));
       console.error('Error fetching list items:', err);
@@ -37,9 +42,19 @@ export function useListItems(listId: string) {
   const addItem = useCallback(async (item: Partial<ListItem>) => {
     try {
       setError(null);
-      const newItem = await shoppingListService.addItemToList(listId, item);
-      setItems(prevItems => [...prevItems, newItem]);
-      return newItem;
+      const result = await shoppingListService.addItemToList({
+        listId,
+        name: item.name || '',
+        quantity: item.quantity || 1,
+        unit: item.unit || '',
+      });
+      
+      if (!result.success) {
+        throw new Error(result.error);
+      }
+      
+      setItems(prevItems => [...prevItems, result.data]);
+      return result.data;
     } catch (err) {
       setError(err instanceof Error ? err : new Error('Failed to add item to list'));
       console.error('Error adding item to list:', err);
@@ -50,11 +65,21 @@ export function useListItems(listId: string) {
   const updateItem = useCallback(async (itemId: string, updates: Partial<ListItem>) => {
     try {
       setError(null);
-      const updatedItem = await shoppingListService.updateListItem(listId, itemId, updates);
+      const result = await shoppingListService.updateListItem({
+        id: itemId,
+        listId,
+        ...updates
+      });
+      
+      if (!result.success) {
+        throw new Error(result.error);
+      }
+      
       setItems(prevItems => 
-        prevItems.map(item => item.id === itemId ? updatedItem : item)
+        prevItems.map(item => item.id === itemId ? result.data : item)
       );
-      return updatedItem;
+      
+      return result.data;
     } catch (err) {
       setError(err instanceof Error ? err : new Error('Failed to update list item'));
       console.error('Error updating list item:', err);
@@ -65,35 +90,53 @@ export function useListItems(listId: string) {
   const removeItem = useCallback(async (itemId: string) => {
     try {
       setError(null);
-      await shoppingListService.removeItemFromList(listId, itemId);
+      const result = await shoppingListService.removeItemFromList(itemId);
+      
+      if (!result.success) {
+        throw new Error(result.error);
+      }
+      
       setItems(prevItems => prevItems.filter(item => item.id !== itemId));
     } catch (err) {
       setError(err instanceof Error ? err : new Error('Failed to remove item from list'));
       console.error('Error removing item from list:', err);
       throw err;
     }
-  }, [listId, shoppingListService]);
+  }, [shoppingListService]);
   
   const markItemAsPurchased = useCallback(async (itemId: string, isPurchased: boolean = true) => {
     try {
       setError(null);
-      const updatedItem = await shoppingListService.updateListItem(listId, itemId, { 
+      const item = items.find(i => i.id === itemId);
+      
+      if (!item) {
+        throw new Error('Item not found');
+      }
+      
+      const result = await shoppingListService.updateListItem({
+        id: itemId,
+        listId,
         isPurchased,
         purchasedAt: isPurchased ? new Date() : undefined,
         // In a real app with authentication, we would include the current user ID
         // purchasedBy: isPurchased ? currentUserId : undefined
       });
       
+      if (!result.success) {
+        throw new Error(result.error);
+      }
+      
       setItems(prevItems => 
-        prevItems.map(item => item.id === itemId ? updatedItem : item)
+        prevItems.map(item => item.id === itemId ? result.data : item)
       );
-      return updatedItem;
+      
+      return result.data;
     } catch (err) {
       setError(err instanceof Error ? err : new Error('Failed to mark item as purchased'));
       console.error('Error marking item as purchased:', err);
       throw err;
     }
-  }, [listId, shoppingListService]);
+  }, [listId, items, shoppingListService]);
   
   return { 
     items, 

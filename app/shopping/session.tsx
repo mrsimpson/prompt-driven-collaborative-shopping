@@ -1,20 +1,10 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, Alert } from 'react-native';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, Alert, ActivityIndicator } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import { Check, ShoppingBag } from 'lucide-react-native';
 import { HeaderWithBack } from '@/src/components/HeaderWithBack';
-import { colors } from '@/src/styles/common';
-
-// Mock data - will be replaced with actual data from our shopping session
-const ALL_MOCK_ITEMS = [
-  { id: '101', name: 'Milk', quantity: 1, unit: 'gallon', isPurchased: false, sourceList: 'Grocery List', listId: '1' },
-  { id: '102', name: 'Eggs', quantity: 12, unit: 'pcs', isPurchased: false, sourceList: 'Grocery List', listId: '1' },
-  { id: '103', name: 'Bread', quantity: 1, unit: 'loaf', isPurchased: false, sourceList: 'Grocery List', listId: '1' },
-  { id: '201', name: 'Screws', quantity: 20, unit: 'pcs', isPurchased: false, sourceList: 'Hardware Store', listId: '2' },
-  { id: '202', name: 'Paint', quantity: 1, unit: 'gallon', isPurchased: false, sourceList: 'Hardware Store', listId: '2' },
-  { id: '301', name: 'Balloons', quantity: 20, unit: 'pcs', isPurchased: false, sourceList: 'Birthday Party', listId: '3' },
-  { id: '302', name: 'Cake', quantity: 1, unit: '', isPurchased: false, sourceList: 'Birthday Party', listId: '3' },
-];
+import { colors, layout, typography, buttons } from '@/src/styles/common';
+import { useShoppingSession } from '@/src/hooks';
 
 export default function ShoppingSessionScreen() {
   const params = useLocalSearchParams();
@@ -24,23 +14,93 @@ export default function ShoppingSessionScreen() {
     return params.listIds ? String(params.listIds).split(',') : [];
   }, [params.listIds]);
   
-  const [items, setItems] = useState(ALL_MOCK_ITEMS);
   const [isCheckoutMode, setIsCheckoutMode] = useState(false);
   
-  // Filter items based on listIds if provided
-  useEffect(() => {
-    if (listIds.length > 0) {
-      setItems(ALL_MOCK_ITEMS.filter(item => listIds.includes(item.listId)));
-    }
-  }, [listIds]);
+  const { 
+    session,
+    lists,
+    items,
+    loading,
+    error,
+    createSession,
+    markItemAsPurchased,
+    endSession,
+    getItemsGroupedByList
+  } = useShoppingSession();
   
-  const toggleItemPurchased = (id: string) => {
-    setItems(items.map(item => 
-      item.id === id ? { ...item, isPurchased: !item.isPurchased } : item
-    ));
+  // Create a new shopping session when the component mounts
+  useEffect(() => {
+    if (listIds.length > 0 && !session) {
+      createSession(listIds).catch(err => {
+        console.error('Failed to create shopping session:', err);
+        Alert.alert(
+          'Error',
+          'Failed to create shopping session. Please try again.',
+          [
+            { 
+              text: 'Go Back', 
+              onPress: () => router.back() 
+            }
+          ]
+        );
+      });
+    }
+  }, [listIds, createSession, session]);
+  
+  // Handle loading state
+  if (loading) {
+    return (
+      <View style={[layout.container, layout.centered]}>
+        <ActivityIndicator size="large" color={colors.primary} />
+        <Text style={[typography.body, { marginTop: 16 }]}>
+          {session ? 'Loading shopping items...' : 'Creating shopping session...'}
+        </Text>
+      </View>
+    );
+  }
+  
+  // Handle error state
+  if (error) {
+    return (
+      <View style={[layout.container, layout.centered]}>
+        <Text style={[typography.body, { color: colors.danger, marginBottom: 16 }]}>
+          {error.message || 'An error occurred during shopping'}
+        </Text>
+        <TouchableOpacity 
+          style={buttons.secondary}
+          onPress={() => router.replace('/lists')}
+        >
+          <Text style={typography.buttonTextSecondary}>Back to Lists</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
+  
+  // Handle case where no lists were selected
+  if (listIds.length === 0) {
+    return (
+      <View style={[layout.container, layout.centered]}>
+        <Text style={typography.body}>No shopping lists selected</Text>
+        <TouchableOpacity 
+          style={[buttons.primary, { marginTop: 16 }]}
+          onPress={() => router.replace('/shopping')}
+        >
+          <Text style={typography.buttonText}>Select Lists</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
+  
+  const handleToggleItemPurchased = async (itemId: string, currentStatus: boolean) => {
+    try {
+      await markItemAsPurchased(itemId, !currentStatus);
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to update item';
+      Alert.alert('Error', errorMessage);
+    }
   };
   
-  const goToCheckout = () => {
+  const handleGoToCheckout = () => {
     if (!items.some(item => item.isPurchased)) {
       Alert.alert('No Items Purchased', 'You need to purchase at least one item to proceed to checkout.');
       return;
@@ -48,9 +108,7 @@ export default function ShoppingSessionScreen() {
     setIsCheckoutMode(true);
   };
   
-  const endShopping = () => {
-    // In a real implementation, this would end the shopping session
-    // and update the lists in our database
+  const handleEndShopping = () => {
     Alert.alert(
       'End Shopping Session',
       'Are you sure you want to end this shopping session?',
@@ -59,9 +117,14 @@ export default function ShoppingSessionScreen() {
         { 
           text: 'End Session', 
           style: 'destructive',
-          onPress: () => {
-            console.log('Ending shopping session');
-            router.replace('/');
+          onPress: async () => {
+            try {
+              await endSession(true);
+              router.replace('/');
+            } catch (error) {
+              const errorMessage = error instanceof Error ? error.message : 'Failed to end shopping session';
+              Alert.alert('Error', errorMessage);
+            }
           }
         }
       ]
@@ -69,16 +132,7 @@ export default function ShoppingSessionScreen() {
   };
   
   // Group items by source list for checkout mode
-  const groupedItems = items.reduce((groups, item) => {
-    if (!groups[item.sourceList]) {
-      groups[item.sourceList] = [];
-    }
-    if (item.isPurchased) {
-      groups[item.sourceList].push(item);
-    }
-    return groups;
-  }, {} as Record<string, typeof items>);
-  
+  const groupedItems = isCheckoutMode ? getItemsGroupedByList() : {};
   const sourceListNames = Object.keys(groupedItems);
   
   if (isCheckoutMode) {
@@ -91,27 +145,35 @@ export default function ShoppingSessionScreen() {
         />
         
         <FlatList
-          data={sourceListNames}
-          keyExtractor={(item) => item}
-          renderItem={({ item: listName }) => (
-            <View style={styles.listSection}>
-              <Text style={styles.listTitle}>{listName}</Text>
-              {groupedItems[listName].map(item => (
-                <View key={item.id} style={styles.checkoutItem}>
-                  <Text style={styles.checkoutItemName}>{item.name}</Text>
-                  <Text style={styles.checkoutItemQuantity}>
-                    {item.quantity} {item.unit}
-                  </Text>
-                </View>
-              ))}
-            </View>
-          )}
+          data={lists}
+          keyExtractor={(list) => list.id}
+          renderItem={({ item: list }) => {
+            const listItems = items.filter(
+              item => item.listId === list.id && item.isPurchased
+            );
+            
+            if (listItems.length === 0) return null;
+            
+            return (
+              <View style={styles.listSection}>
+                <Text style={styles.listTitle}>{list.name}</Text>
+                {listItems.map(item => (
+                  <View key={item.id} style={styles.checkoutItem}>
+                    <Text style={styles.checkoutItemName}>{item.name}</Text>
+                    <Text style={styles.checkoutItemQuantity}>
+                      {item.quantity} {item.unit}
+                    </Text>
+                  </View>
+                ))}
+              </View>
+            );
+          }}
           contentContainerStyle={styles.listContent}
         />
         
         <TouchableOpacity 
           style={styles.endButton}
-          onPress={endShopping}
+          onPress={handleEndShopping}
         >
           <Text style={styles.endButtonText}>End Shopping Session</Text>
         </TouchableOpacity>
@@ -130,44 +192,49 @@ export default function ShoppingSessionScreen() {
       <FlatList
         data={items}
         keyExtractor={(item) => item.id}
-        renderItem={({ item }) => (
-          <TouchableOpacity 
-            style={[
-              styles.itemRow,
-              item.isPurchased && styles.itemRowPurchased
-            ]}
-            onPress={() => toggleItemPurchased(item.id)}
-          >
-            <View style={[
-              styles.checkbox,
-              item.isPurchased && styles.checkboxChecked
-            ]}>
-              {item.isPurchased && <Check size={16} color="#FFFFFF" />}
-            </View>
-            
-            <View style={styles.itemDetails}>
-              <Text style={[
-                styles.itemName,
-                item.isPurchased && styles.itemPurchased
+        renderItem={({ item }) => {
+          // Find the source list for this item
+          const sourceList = lists.find(list => list.id === item.listId);
+          
+          return (
+            <TouchableOpacity 
+              style={[
+                styles.itemRow,
+                item.isPurchased && styles.itemRowPurchased
+              ]}
+              onPress={() => handleToggleItemPurchased(item.id, !!item.isPurchased)}
+            >
+              <View style={[
+                styles.checkbox,
+                item.isPurchased && styles.checkboxChecked
               ]}>
-                {item.name}
-              </Text>
-              <Text style={styles.itemQuantity}>
-                {item.quantity} {item.unit}
-              </Text>
-              <Text style={styles.itemSource}>
-                From: {item.sourceList}
-              </Text>
-            </View>
-          </TouchableOpacity>
-        )}
+                {item.isPurchased && <Check size={16} color="#FFFFFF" />}
+              </View>
+              
+              <View style={styles.itemDetails}>
+                <Text style={[
+                  styles.itemName,
+                  item.isPurchased && styles.itemPurchased
+                ]}>
+                  {item.name}
+                </Text>
+                <Text style={styles.itemQuantity}>
+                  {item.quantity} {item.unit}
+                </Text>
+                <Text style={styles.itemSource}>
+                  From: {sourceList?.name || 'Unknown List'}
+                </Text>
+              </View>
+            </TouchableOpacity>
+          );
+        }}
         contentContainerStyle={styles.listContent}
       />
       
       <View style={styles.footer}>
         <TouchableOpacity 
           style={styles.checkoutButton}
-          onPress={goToCheckout}
+          onPress={handleGoToCheckout}
         >
           <View style={styles.buttonContainer}>
             <ShoppingBag size={20} color="#FFFFFF" style={styles.buttonIcon} />
