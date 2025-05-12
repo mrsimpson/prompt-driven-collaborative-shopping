@@ -22,6 +22,8 @@ export interface UserService {
   getCurrentUser(): Promise<Result<User | null>>;
   logout(): Promise<Result<void>>;
   getUser(userId: string): Promise<Result<User>>;
+  updateUser(userId: string, updates: Partial<User>): Promise<User>;
+  initializeApp(): Promise<void>;
 }
 
 /**
@@ -29,6 +31,45 @@ export interface UserService {
  */
 export class LocalUserService implements UserService {
   private currentUserId: string | null = null;
+
+  /**
+   * Initialize the application
+   * Sets up the database and creates initial data if needed
+   */
+  async initializeApp(): Promise<void> {
+    try {
+      await db.initializeDatabase();
+      console.log('Database initialized successfully');
+    } catch (error) {
+      console.error('Failed to initialize database:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Update a user's profile information
+   * @param userId User ID
+   * @param updates Updates to apply to the user
+   * @returns The updated user
+   */
+  async updateUser(userId: string, updates: Partial<User>): Promise<User> {
+    const user = await db.users.get(userId);
+    
+    if (!user || user.deletedAt) {
+      throw new Error('User not found');
+    }
+    
+    const now = new Date();
+    const updatedUser = {
+      ...user,
+      ...updates,
+      updatedAt: now,
+      lastModifiedAt: now,
+    };
+    
+    await db.users.put(updatedUser);
+    return updatedUser;
+  }
 
   /**
    * Register a new user
