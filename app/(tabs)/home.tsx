@@ -25,7 +25,7 @@ export default function HomeScreen() {
           
           {isLocalMode && (
             <View style={styles.localModeCard}>
-              <Text style={styles.localModeTitle}>You're in Local Mode</Text>
+              <Text style={styles.localModeTitle}>You&apos;re in Local Mode</Text>
               <Text style={styles.localModeText}>
                 Your data is stored only on this device. Sign in to sync across devices.
               </Text>

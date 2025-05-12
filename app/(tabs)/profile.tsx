@@ -18,7 +18,7 @@ export default function ProfileScreen() {
       // Clear form after login
       setEmail('');
       setPassword('');
-    } catch (error) {
+    } catch {
       Alert.alert('Login Failed', 'Invalid email or password');
     }
   };

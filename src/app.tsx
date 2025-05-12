@@ -1,4 +1,4 @@
-import React, { ReactNode, useEffect } from 'react';
+import React, { ReactNode } from 'react';
 import { AuthProvider } from '@/src/contexts/AuthContext';
 import { useAppInitialization } from '@/src/hooks/useAppInitialization';
 import { View, Text, ActivityIndicator } from 'react-native';

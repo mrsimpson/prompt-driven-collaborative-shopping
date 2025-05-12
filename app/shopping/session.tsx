@@ -1,9 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { View, Text, StyleSheet, FlatList, TouchableOpacity, Alert } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import { Check, ShoppingBag } from 'lucide-react-native';
 import { HeaderWithBack } from '@/src/components/HeaderWithBack';
-import { layout, colors, typography, buttons } from '@/src/styles/common';
+import { colors } from '@/src/styles/common';
 
 // Mock data - will be replaced with actual data from our shopping session
 const ALL_MOCK_ITEMS = [
@@ -18,7 +18,11 @@ const ALL_MOCK_ITEMS = [
 
 export default function ShoppingSessionScreen() {
   const params = useLocalSearchParams();
-  const listIds = params.listIds ? String(params.listIds).split(',') : [];
+  
+  // Use useMemo to prevent the listIds array from being recreated on every render
+  const listIds = useMemo(() => {
+    return params.listIds ? String(params.listIds).split(',') : [];
+  }, [params.listIds]);
   
   const [items, setItems] = useState(ALL_MOCK_ITEMS);
   const [isCheckoutMode, setIsCheckoutMode] = useState(false);
