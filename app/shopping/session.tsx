@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { View, Text, StyleSheet, FlatList, TouchableOpacity, Alert, ActivityIndicator } from 'react-native';
-import { router, useLocalSearchParams } from 'expo-router';
+import { router, useLocalSearchParams, useNavigation } from 'expo-router';
 import { Check, ShoppingBag } from 'lucide-react-native';
 import { HeaderWithBack } from '@/src/components/HeaderWithBack';
 import { colors, layout, typography, buttons } from '@/src/styles/common';
@@ -8,6 +8,7 @@ import { useShoppingSession } from '@/src/hooks';
 
 export default function ShoppingSessionScreen() {
   const params = useLocalSearchParams();
+  const navigation = useNavigation();
   
   // Use useMemo to prevent the listIds array from being recreated on every render
   const listIds = useMemo(() => {
@@ -46,6 +47,25 @@ export default function ShoppingSessionScreen() {
       });
     }
   }, [listIds, createSession, session]);
+
+  // Add a listener to end the session when navigating away
+  useEffect(() => {
+    // This function will be called when the screen is about to be unfocused/navigated away from
+    const endSessionOnLeave = () => {
+      if (session) {
+        console.log('Ending shopping session due to navigation away');
+        endSession(true).catch(error => {
+          console.error('Failed to end shopping session on navigation:', error);
+        });
+      }
+    };
+
+    // Add the listener for navigation events
+    const unsubscribe = navigation.addListener('beforeRemove', endSessionOnLeave);
+
+    // Clean up the listener when the component unmounts
+    return unsubscribe;
+  }, [session, endSession, navigation]);
   
   // Handle loading state
   if (loading) {
@@ -191,7 +211,14 @@ export default function ShoppingSessionScreen() {
       
       <FlatList
         data={items}
-        keyExtractor={(item) => item.id}
+        keyExtractor={(item) => {
+          // Generate a stable ID for each item
+          if (!item.id) {
+            // If the item doesn't have an ID, create one from its properties
+            return `${item.listId}-${item.name}-${item.quantity}-${item.unit}`;
+          }
+          return item.id;
+        }}
         renderItem={({ item }) => {
           // Find the source list for this item
           const sourceList = lists.find(list => list.id === item.listId);
@@ -202,7 +229,14 @@ export default function ShoppingSessionScreen() {
                 styles.itemRow,
                 item.isPurchased && styles.itemRowPurchased
               ]}
-              onPress={() => handleToggleItemPurchased(item.id, !!item.isPurchased)}
+              onPress={() => {
+                // Make sure the item has an ID before trying to toggle its status
+                if (!item.id) {
+                  Alert.alert('Error', 'Cannot update this item because it has no ID');
+                  return;
+                }
+                handleToggleItemPurchased(item.id, !!item.isPurchased);
+              }}
             >
               <View style={[
                 styles.checkbox,

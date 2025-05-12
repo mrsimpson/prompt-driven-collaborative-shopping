@@ -49,10 +49,12 @@ export interface CreateListItemParams {
  */
 export interface UpdateListItemParams {
   id: string;
+  listId: string;
   name?: string;
   quantity?: number;
   unit?: string;
   isPurchased?: boolean;
+  purchasedAt?: Date;
 }
 
 /**

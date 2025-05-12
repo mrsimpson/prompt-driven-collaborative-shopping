@@ -89,6 +89,20 @@ const styles = {
     textAlign: 'center',
     marginBottom: 16,
   },
+  listContent: {
+    padding: 16,
+    paddingBottom: 80, // Extra padding for the footer
+  },
+  itemRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.white,
+    padding: 16,
+    borderRadius: 8,
+    marginBottom: 8,
+    borderWidth: 1,
+    borderColor: colors.gray200,
+  },
 };
 
 export default function ListDetailScreen() {
@@ -170,15 +184,6 @@ export default function ListDetailScreen() {
     }
   };
   
-  const handleToggleItemPurchased = async (itemId: string, currentStatus: boolean) => {
-    try {
-      await markItemAsPurchased(itemId, !currentStatus);
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Failed to update item';
-      Alert.alert('Error', errorMessage);
-    }
-  };
-  
   const handleDeleteItem = async (itemId: string) => {
     try {
       await removeItem(itemId);
@@ -252,22 +257,9 @@ export default function ListDetailScreen() {
           data={items}
           keyExtractor={(item) => item.id}
           renderItem={({ item }) => (
-            <View style={[layout.row, lists.item]}>
-              <TouchableOpacity 
-                style={[
-                  checkboxes.base, 
-                  item.isPurchased ? checkboxes.checked : {}
-                ]}
-                onPress={() => handleToggleItemPurchased(item.id, !!item.isPurchased)}
-              >
-                {item.isPurchased && <Check size={16} color={colors.white} />}
-              </TouchableOpacity>
-              
+            <View style={styles.itemRow}>
               <View style={styles.itemDetails}>
-                <Text style={[
-                  styles.itemName,
-                  item.isPurchased && styles.itemPurchased
-                ]}>
+                <Text style={styles.itemName}>
                   {item.name}
                 </Text>
                 <Text style={styles.itemQuantity}>
@@ -283,7 +275,7 @@ export default function ListDetailScreen() {
               </TouchableOpacity>
             </View>
           )}
-          contentContainerStyle={[lists.content, { paddingBottom: 80 }]} // Extra padding for the footer
+          contentContainerStyle={styles.listContent}
           refreshing={itemsLoading}
           onRefresh={refreshItems}
         />

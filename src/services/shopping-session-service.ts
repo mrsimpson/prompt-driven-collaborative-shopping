@@ -72,11 +72,16 @@ export class LocalShoppingSessionService implements ShoppingSessionService {
       const existingSession = await this.sessionRepository.findActiveByUser(
         params.userId,
       );
+      
+      // If there's an existing session, end it first
       if (existingSession) {
-        return {
-          success: false,
-          error: "User already has an active shopping session",
-        };
+        console.log(`Ending existing session ${existingSession.id} before creating a new one`);
+        
+        // End the existing session
+        await this.endSession({
+          sessionId: existingSession.id,
+          createNewListForUnpurchased: true
+        });
       }
 
       // Check if all lists exist and are not locked
@@ -383,10 +388,12 @@ export class LocalShoppingSessionService implements ShoppingSessionService {
           }
         } else {
           consolidatedMap.set(key, {
+            id: item.id || generateUUID(), // Ensure the consolidated item has an ID
             name: item.name,
             quantity: item.quantity,
             unit: item.unit,
             isPurchased: item.isPurchased,
+            listId: item.listId, // Add the listId to the consolidated item
             sources: [
               {
                 listId: item.listId,

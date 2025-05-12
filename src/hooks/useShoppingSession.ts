@@ -74,6 +74,17 @@ export function useShoppingSession(sessionId?: string) {
       // Default user ID for local mode
       const defaultUserId = "default-user-id";
       
+      // Check for existing active sessions and end them first
+      const activeSessionResult = await shoppingSessionService.getActiveSession(defaultUserId);
+      
+      if (activeSessionResult.success && activeSessionResult.data) {
+        console.log('Found existing active session, ending it first...');
+        await shoppingSessionService.endSession({
+          sessionId: activeSessionResult.data.id,
+          createNewListForUnpurchased: true
+        });
+      }
+      
       // Create a new shopping session
       const sessionResult = await shoppingSessionService.createSession({
         userId: defaultUserId,
@@ -138,8 +149,6 @@ export function useShoppingSession(sessionId?: string) {
         listId: item.listId,
         isPurchased,
         purchasedAt: isPurchased ? new Date() : undefined,
-        // In a real app with authentication, we would include the current user ID
-        // purchasedBy: isPurchased ? currentUserId : undefined
       });
       
       if (!result.success) {
