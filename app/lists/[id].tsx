@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, TextInput } from 'react-native';
+import { View, Text, FlatList, TouchableOpacity, TextInput } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
 import { Plus, Check, Trash2 } from 'lucide-react-native';
 import { HeaderWithBack } from '@/src/components/HeaderWithBack';
+import { layout, lists, checkboxes, colors, buttons } from '@/src/styles/common';
 
 // Mock data - will be replaced with actual data from Dexie.js
 const MOCK_LISTS = {
@@ -42,6 +43,62 @@ const MOCK_LISTS = {
   }
 };
 
+const styles = {
+  addItemForm: {
+    flexDirection: 'row' as const,
+    padding: 16,
+    backgroundColor: colors.white,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.gray200,
+  },
+  itemNameInput: {
+    flex: 1,
+    backgroundColor: colors.gray100,
+    borderRadius: 6,
+    padding: 12,
+    marginRight: 8,
+  },
+  quantityContainer: {
+    flexDirection: 'row' as const,
+    width: 100,
+    marginRight: 8,
+  },
+  quantityInput: {
+    width: 40,
+    backgroundColor: colors.gray100,
+    borderRadius: 6,
+    padding: 12,
+    textAlign: 'center',
+  },
+  unitInput: {
+    flex: 1,
+    backgroundColor: colors.gray100,
+    borderRadius: 6,
+    padding: 12,
+    marginLeft: 4,
+  },
+  itemDetails: {
+    flex: 1,
+  },
+  itemName: {
+    fontSize: 16,
+    fontWeight: '500',
+    color: colors.black,
+  },
+  itemPurchased: {
+    textDecorationLine: 'line-through',
+    color: colors.gray400,
+  },
+  itemQuantity: {
+    fontSize: 14,
+    color: colors.gray500,
+    marginTop: 2,
+  },
+  deleteButton: {
+    padding: 8,
+  },
+};
+
 export default function ListDetailScreen() {
   const { id } = useLocalSearchParams();
   const listId = Array.isArray(id) ? id[0] : id;
@@ -55,7 +112,7 @@ export default function ListDetailScreen() {
   
   if (!list) {
     return (
-      <View style={styles.container}>
+      <View style={layout.container}>
         <Text>List not found</Text>
       </View>
     );
@@ -85,7 +142,7 @@ export default function ListDetailScreen() {
   };
   
   return (
-    <View style={styles.container}>
+    <View style={layout.container}>
       <HeaderWithBack 
         title={list.name}
         backTo="/lists"
@@ -114,10 +171,10 @@ export default function ListDetailScreen() {
           />
         </View>
         <TouchableOpacity 
-          style={styles.addButton}
+          style={buttons.icon}
           onPress={addNewItem}
         >
-          <Plus size={20} color="#FFFFFF" />
+          <Plus size={20} color={colors.white} />
         </TouchableOpacity>
       </View>
       
@@ -125,15 +182,15 @@ export default function ListDetailScreen() {
         data={list.items}
         keyExtractor={(item) => item.id}
         renderItem={({ item }) => (
-          <View style={styles.itemRow}>
+          <View style={[layout.row, lists.item]}>
             <TouchableOpacity 
               style={[
-                styles.checkbox, 
-                item.isPurchased && styles.checkboxChecked
+                checkboxes.base, 
+                item.isPurchased ? checkboxes.checked : {}
               ]}
               onPress={() => toggleItemPurchased(item.id)}
             >
-              {item.isPurchased && <Check size={16} color="#FFFFFF" />}
+              {item.isPurchased && <Check size={16} color={colors.white} />}
             </TouchableOpacity>
             
             <View style={styles.itemDetails}>
@@ -152,106 +209,12 @@ export default function ListDetailScreen() {
               style={styles.deleteButton}
               onPress={() => deleteItem(item.id)}
             >
-              <Trash2 size={18} color="#EF4444" />
+              <Trash2 size={18} color={colors.danger} />
             </TouchableOpacity>
           </View>
         )}
-        contentContainerStyle={styles.listContent}
+        contentContainerStyle={lists.content}
       />
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#F9FAFB',
-  },
-  addItemForm: {
-    flexDirection: 'row',
-    padding: 16,
-    backgroundColor: '#FFFFFF',
-    borderBottomWidth: 1,
-    borderBottomColor: '#E5E7EB',
-  },
-  itemNameInput: {
-    flex: 1,
-    backgroundColor: '#F3F4F6',
-    borderRadius: 6,
-    padding: 12,
-    marginRight: 8,
-  },
-  quantityContainer: {
-    flexDirection: 'row',
-    width: 100,
-    marginRight: 8,
-  },
-  quantityInput: {
-    width: 40,
-    backgroundColor: '#F3F4F6',
-    borderRadius: 6,
-    padding: 12,
-    textAlign: 'center',
-  },
-  unitInput: {
-    flex: 1,
-    backgroundColor: '#F3F4F6',
-    borderRadius: 6,
-    padding: 12,
-    marginLeft: 4,
-  },
-  addButton: {
-    backgroundColor: '#3B82F6',
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  listContent: {
-    padding: 16,
-  },
-  itemRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#FFFFFF',
-    padding: 16,
-    borderRadius: 8,
-    marginBottom: 8,
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
-  },
-  checkbox: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    borderWidth: 2,
-    borderColor: '#3B82F6',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 12,
-  },
-  checkboxChecked: {
-    backgroundColor: '#3B82F6',
-  },
-  itemDetails: {
-    flex: 1,
-  },
-  itemName: {
-    fontSize: 16,
-    fontWeight: '500',
-    color: '#111827',
-  },
-  itemPurchased: {
-    textDecorationLine: 'line-through',
-    color: '#9CA3AF',
-  },
-  itemQuantity: {
-    fontSize: 14,
-    color: '#6B7280',
-    marginTop: 2,
-  },
-  deleteButton: {
-    padding: 8,
-  },
-});

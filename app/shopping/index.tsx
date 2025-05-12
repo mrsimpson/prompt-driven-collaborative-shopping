@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity } from 'react-native';
+import { View, Text, FlatList, TouchableOpacity } from 'react-native';
 import { router } from 'expo-router';
 import { ShoppingCart } from 'lucide-react-native';
 import { HeaderWithBack } from '@/src/components/HeaderWithBack';
+import { layout, cards, typography, buttons, colors, checkboxes } from '@/src/styles/common';
 
 // Mock data - will be replaced with actual data from Dexie.js
 const MOCK_LISTS = [
@@ -10,6 +11,31 @@ const MOCK_LISTS = [
   { id: '2', name: 'Hardware Store', itemCount: 3, selected: false },
   { id: '3', name: 'Birthday Party', itemCount: 8, selected: false },
 ];
+
+const styles = {
+  listInfo: {
+    flex: 1,
+  },
+  listName: {
+    fontSize: 16,
+    fontWeight: '500',
+    color: colors.black,
+    marginBottom: 4,
+  },
+  listNameSelected: {
+    color: colors.primaryDark,
+  },
+  listCount: {
+    fontSize: 14,
+    color: colors.gray500,
+  },
+  listCountSelected: {
+    color: colors.primary,
+  },
+  buttonIcon: {
+    marginRight: 8,
+  },
+};
 
 export default function ShoppingModeScreen() {
   const [lists, setLists] = useState(MOCK_LISTS);
@@ -37,15 +63,15 @@ export default function ShoppingModeScreen() {
   };
   
   return (
-    <View style={styles.container}>
+    <View style={layout.container}>
       <HeaderWithBack 
         title="Shopping Mode"
         backTo="/"
         backTitle="Home"
       />
       
-      <View style={styles.content}>
-        <Text style={styles.subtitle}>Select lists to shop with:</Text>
+      <View style={layout.content}>
+        <Text style={typography.subtitle}>Select lists to shop with:</Text>
         
         <FlatList
           data={lists}
@@ -53,131 +79,50 @@ export default function ShoppingModeScreen() {
           renderItem={({ item }) => (
             <TouchableOpacity 
               style={[
-                styles.listItem,
-                item.selected && styles.listItemSelected
+                cards.basic,
+                item.selected && cards.selected
               ]}
               onPress={() => toggleListSelection(item.id)}
             >
-              <View style={styles.listInfo}>
-                <Text style={[
-                  styles.listName,
-                  item.selected && styles.listNameSelected
-                ]}>
-                  {item.name}
-                </Text>
-                <Text style={[
-                  styles.listCount,
-                  item.selected && styles.listCountSelected
-                ]}>
-                  {item.itemCount} items
-                </Text>
+              <View style={layout.spaceBetween}>
+                <View style={styles.listInfo}>
+                  <Text style={[
+                    styles.listName,
+                    item.selected && styles.listNameSelected
+                  ]}>
+                    {item.name}
+                  </Text>
+                  <Text style={[
+                    styles.listCount,
+                    item.selected && styles.listCountSelected
+                  ]}>
+                    {item.itemCount} items
+                  </Text>
+                </View>
+                <View style={[
+                  checkboxes.base,
+                  item.selected ? checkboxes.checked : checkboxes.unchecked
+                ]} />
               </View>
-              <View style={[
-                styles.checkbox,
-                item.selected && styles.checkboxSelected
-              ]} />
             </TouchableOpacity>
           )}
-          contentContainerStyle={styles.listContent}
+          contentContainerStyle={{ flexGrow: 1 }}
         />
         
         <TouchableOpacity 
           style={[
-            styles.startButton,
-            !lists.some(l => l.selected) && styles.startButtonDisabled
+            buttons.primary,
+            !lists.some(l => l.selected) && buttons.primaryDisabled
           ]}
           onPress={startShopping}
           disabled={!lists.some(l => l.selected)}
         >
-          <ShoppingCart size={20} color="#FFFFFF" style={styles.buttonIcon} />
-          <Text style={styles.startButtonText}>Start Shopping</Text>
+          <View style={buttons.iconText}>
+            <ShoppingCart size={20} color={colors.white} style={styles.buttonIcon} />
+            <Text style={typography.buttonText}>Start Shopping</Text>
+          </View>
         </TouchableOpacity>
       </View>
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#F9FAFB',
-  },
-  content: {
-    flex: 1,
-    padding: 16,
-  },
-  subtitle: {
-    fontSize: 18,
-    fontWeight: '500',
-    color: '#374151',
-    marginBottom: 16,
-  },
-  listContent: {
-    flexGrow: 1,
-  },
-  listItem: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    backgroundColor: '#FFFFFF',
-    padding: 16,
-    borderRadius: 8,
-    marginBottom: 12,
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
-  },
-  listItemSelected: {
-    borderColor: '#3B82F6',
-    backgroundColor: '#EFF6FF',
-  },
-  listInfo: {
-    flex: 1,
-  },
-  listName: {
-    fontSize: 16,
-    fontWeight: '500',
-    color: '#111827',
-    marginBottom: 4,
-  },
-  listNameSelected: {
-    color: '#1E40AF',
-  },
-  listCount: {
-    fontSize: 14,
-    color: '#6B7280',
-  },
-  listCountSelected: {
-    color: '#3B82F6',
-  },
-  checkbox: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    borderWidth: 2,
-    borderColor: '#D1D5DB',
-  },
-  checkboxSelected: {
-    borderColor: '#3B82F6',
-    backgroundColor: '#3B82F6',
-  },
-  startButton: {
-    backgroundColor: '#3B82F6',
-    borderRadius: 8,
-    padding: 16,
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginTop: 16,
-  },
-  startButtonDisabled: {
-    backgroundColor: '#93C5FD',
-  },
-  buttonIcon: {
-    marginRight: 8,
-  },
-  startButtonText: {
-    color: '#FFFFFF',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-});

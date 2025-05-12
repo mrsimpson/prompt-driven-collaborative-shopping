@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TextInput, TouchableOpacity } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity } from 'react-native';
 import { router } from 'expo-router';
 import { HeaderWithBack } from '@/src/components/HeaderWithBack';
+import { layout, forms, buttons, typography } from '@/src/styles/common';
 
 export default function NewListScreen() {
   const [listName, setListName] = useState('');
@@ -22,25 +23,25 @@ export default function NewListScreen() {
   };
   
   return (
-    <View style={styles.container}>
+    <View style={layout.container}>
       <HeaderWithBack 
         title="Create New List"
         backTo="/lists"
         backTitle="My Lists"
       />
       
-      <View style={styles.formContainer}>
-        <Text style={styles.label}>List Name</Text>
+      <View style={forms.formContainer}>
+        <Text style={forms.label}>List Name</Text>
         <TextInput
-          style={styles.input}
+          style={forms.input}
           value={listName}
           onChangeText={setListName}
           placeholder="Enter list name"
         />
         
-        <Text style={styles.label}>Description (Optional)</Text>
+        <Text style={forms.label}>Description (Optional)</Text>
         <TextInput
-          style={[styles.input, styles.textArea]}
+          style={[forms.input, forms.textArea]}
           value={listDescription}
           onChangeText={setListDescription}
           placeholder="Enter list description"
@@ -50,59 +51,15 @@ export default function NewListScreen() {
         
         <TouchableOpacity 
           style={[
-            styles.createButton,
-            !listName.trim() && styles.createButtonDisabled
+            buttons.primary,
+            !listName.trim() && buttons.primaryDisabled
           ]}
           onPress={createList}
           disabled={!listName.trim()}
         >
-          <Text style={styles.createButtonText}>Create List</Text>
+          <Text style={typography.buttonText}>Create List</Text>
         </TouchableOpacity>
       </View>
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#F9FAFB',
-  },
-  formContainer: {
-    padding: 16,
-  },
-  label: {
-    fontSize: 16,
-    fontWeight: '500',
-    color: '#374151',
-    marginBottom: 8,
-  },
-  input: {
-    backgroundColor: '#FFFFFF',
-    borderWidth: 1,
-    borderColor: '#D1D5DB',
-    borderRadius: 6,
-    padding: 12,
-    fontSize: 16,
-    marginBottom: 16,
-  },
-  textArea: {
-    height: 100,
-    textAlignVertical: 'top',
-  },
-  createButton: {
-    backgroundColor: '#3B82F6',
-    borderRadius: 6,
-    padding: 14,
-    alignItems: 'center',
-    marginTop: 8,
-  },
-  createButtonDisabled: {
-    backgroundColor: '#93C5FD',
-  },
-  createButtonText: {
-    color: '#FFFFFF',
-    fontSize: 16,
-    fontWeight: '500',
-  },
-});

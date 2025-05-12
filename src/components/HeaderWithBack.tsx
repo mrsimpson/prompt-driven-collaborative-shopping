@@ -1,13 +1,15 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, TouchableOpacity } from 'react-native';
 import { ArrowLeft } from 'lucide-react-native';
 import { router } from 'expo-router';
+import { headers, typography } from '@/src/styles/common';
 
 interface HeaderWithBackProps {
   title: string;
   backTo?: string;
   backTitle?: string;
   onBack?: () => void;
+  rightElement?: React.ReactNode;
 }
 
 export const HeaderWithBack: React.FC<HeaderWithBackProps> = ({
@@ -15,6 +17,7 @@ export const HeaderWithBack: React.FC<HeaderWithBackProps> = ({
   backTo,
   backTitle,
   onBack,
+  rightElement,
 }) => {
   const handleBack = () => {
     if (onBack) {
@@ -27,40 +30,21 @@ export const HeaderWithBack: React.FC<HeaderWithBackProps> = ({
   };
 
   return (
-    <View style={styles.header}>
-      <TouchableOpacity style={styles.backButton} onPress={handleBack}>
+    <View style={headers.container}>
+      <TouchableOpacity style={headers.backButton} onPress={handleBack}>
         <ArrowLeft size={24} color="#111827" />
-        {backTitle && <Text style={styles.backButtonText}>{backTitle}</Text>}
+        {backTitle && <Text style={headers.backButtonText}>{backTitle}</Text>}
       </TouchableOpacity>
-      <Text style={styles.title}>{title}</Text>
+      
+      <View style={headers.titleContainer}>
+        <Text style={typography.title}>{title}</Text>
+      </View>
+      
+      {rightElement ? (
+        rightElement
+      ) : (
+        <View style={headers.rightPlaceholder} />
+      )}
     </View>
   );
 };
-
-const styles = StyleSheet.create({
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 16,
-    backgroundColor: '#FFFFFF',
-    borderBottomWidth: 1,
-    borderBottomColor: '#E5E7EB',
-  },
-  backButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginRight: 16,
-  },
-  backButtonText: {
-    fontSize: 16,
-    fontWeight: '500',
-    color: '#111827',
-    marginLeft: 4,
-  },
-  title: {
-    fontSize: 20,
-    fontWeight: '600',
-    color: '#111827',
-  },
-});
