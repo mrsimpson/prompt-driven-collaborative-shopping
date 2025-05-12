@@ -1,23 +1,14 @@
-import React, { useEffect } from "react";
-import { db } from "./stores/database";
+import React, { ReactNode } from 'react';
+import { AuthProvider } from '@/src/contexts/AuthContext';
 
-/**
- * Main application component that initializes the database
- */
-export function AppProvider({ children }: { children: React.ReactNode }) {
-  useEffect(() => {
-    // Initialize the database when the app starts
-    const initDb = async () => {
-      try {
-        await db.initializeDatabase();
-        console.log("Database initialized successfully");
-      } catch (error) {
-        console.error("Failed to initialize database:", error);
-      }
-    };
-
-    initDb();
-  }, []);
-
-  return <>{children}</>;
+interface AppProviderProps {
+  children: ReactNode;
 }
+
+export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
+  return (
+    <AuthProvider>
+      {children}
+    </AuthProvider>
+  );
+};

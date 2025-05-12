@@ -3,19 +3,14 @@
   "compilerOptions": {
     "strict": true,
     "paths": {
-      "@/*": ["./*"],
-      "@/components/*": ["./src/components/*"],
-      "@/hooks/*": ["./src/hooks/*"],
-      "@/utils/*": ["./src/utils/*"],
-      "@/services/*": ["./src/services/*"],
-      "@/repositories/*": ["./src/repositories/*"],
-      "@/stores/*": ["./src/stores/*"],
-      "@/types/*": ["./src/types/*"],
-      "@/contexts/*": ["./src/contexts/*"],
-      "@/models": ["./src/types/models.ts"],
-      "@/operations": ["./src/types/operations.ts"]
+      "@/*": [
+        "./*"
+      ]
     },
-    "types": ["jest", "node"],
+    "types": [
+      "jest",
+      "node"
+    ],
     "typeRoots": [
       ".expo/types/**/*.ts",
       "./node_modules/@types",
@@ -29,6 +24,8 @@
     "**/*.tsx",
     ".eslintrc.js",
     "jest.config.js",
-    "src/types/*.d.ts"
+    "src/types/*.d.ts",
+    ".expo/types/**/*.ts",
+    "expo-env.d.ts"
   ]
 }
