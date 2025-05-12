@@ -1,36 +1,43 @@
-import { StyleSheet, Text, Pressable, PressableProps, ViewStyle, TextStyle } from 'react-native';
+import {
+  StyleSheet,
+  Text,
+  Pressable,
+  PressableProps,
+  ViewStyle,
+  TextStyle,
+} from "react-native";
 
-type ButtonVariant = 'primary' | 'secondary' | 'outline';
+type ButtonVariant = "primary" | "secondary" | "outline";
 
 interface ButtonProps extends PressableProps {
   title: string;
   variant?: ButtonVariant;
-  size?: 'small' | 'medium' | 'large';
+  size?: "small" | "medium" | "large";
   style?: ViewStyle;
   textStyle?: TextStyle;
 }
 
 export default function Button({
   title,
-  variant = 'primary',
-  size = 'medium',
+  variant = "primary",
+  size = "medium",
   style,
   textStyle,
   ...props
 }: ButtonProps) {
   const getVariantStyles = () => {
     switch (variant) {
-      case 'primary':
+      case "primary":
         return {
           button: styles.primaryButton,
           text: styles.primaryText,
         };
-      case 'secondary':
+      case "secondary":
         return {
           button: styles.secondaryButton,
           text: styles.secondaryText,
         };
-      case 'outline':
+      case "outline":
         return {
           button: styles.outlineButton,
           text: styles.outlineText,
@@ -40,17 +47,17 @@ export default function Button({
 
   const getSizeStyles = () => {
     switch (size) {
-      case 'small':
+      case "small":
         return {
           button: styles.smallButton,
           text: styles.smallText,
         };
-      case 'medium':
+      case "medium":
         return {
           button: styles.mediumButton,
           text: styles.mediumText,
         };
-      case 'large':
+      case "large":
         return {
           button: styles.largeButton,
           text: styles.largeText,
@@ -72,7 +79,9 @@ export default function Button({
       ]}
       {...props}
     >
-      <Text style={[styles.text, variantStyles.text, sizeStyles.text, textStyle]}>
+      <Text
+        style={[styles.text, variantStyles.text, sizeStyles.text, textStyle]}
+      >
         {title}
       </Text>
     </Pressable>
@@ -82,35 +91,35 @@ export default function Button({
 const styles = StyleSheet.create({
   button: {
     borderRadius: 8,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
   pressed: {
     opacity: 0.8,
   },
   text: {
-    fontWeight: '600',
+    fontWeight: "600",
   },
   // Variant styles
   primaryButton: {
-    backgroundColor: '#3B82F6',
+    backgroundColor: "#3B82F6",
   },
   primaryText: {
-    color: '#FFFFFF',
+    color: "#FFFFFF",
   },
   secondaryButton: {
-    backgroundColor: '#EFF6FF',
+    backgroundColor: "#EFF6FF",
   },
   secondaryText: {
-    color: '#3B82F6',
+    color: "#3B82F6",
   },
   outlineButton: {
-    backgroundColor: 'transparent',
+    backgroundColor: "transparent",
     borderWidth: 1,
-    borderColor: '#3B82F6',
+    borderColor: "#3B82F6",
   },
   outlineText: {
-    color: '#3B82F6',
+    color: "#3B82F6",
   },
   // Size styles
   smallButton: {

@@ -2,10 +2,7 @@
  * Type definitions for operations in the ShareMyCart application
  */
 
-import { 
-  User, 
-  ShoppingSessionStatus
-} from './models';
+import { User, ShoppingSessionStatus } from "./models";
 
 /**
  * Result of an operation that might fail
@@ -107,7 +104,7 @@ export interface CreateCommunityParams {
 export interface AddCommunityMemberParams {
   communityId: string;
   userId: string;
-  role: 'admin' | 'member';
+  role: "admin" | "member";
 }
 
 /**

@@ -1,6 +1,6 @@
-import { ListItem } from '../types/models';
-import { BaseRepository, DexieBaseRepository } from './base-repository';
-import { db } from '../stores/database';
+import { ListItem } from "../types/models";
+import { BaseRepository, DexieBaseRepository } from "./base-repository";
+import { db } from "../stores/database";
 
 /**
  * Repository interface for list items
@@ -16,7 +16,10 @@ export interface ListItemRepository extends BaseRepository<ListItem> {
 /**
  * Dexie implementation of the list item repository
  */
-export class DexieListItemRepository extends DexieBaseRepository<ListItem> implements ListItemRepository {
+export class DexieListItemRepository
+  extends DexieBaseRepository<ListItem>
+  implements ListItemRepository
+{
   constructor() {
     super(db.listItems);
   }
@@ -28,9 +31,9 @@ export class DexieListItemRepository extends DexieBaseRepository<ListItem> imple
    */
   async findByList(listId: string): Promise<ListItem[]> {
     return this.table
-      .where('listId')
+      .where("listId")
       .equals(listId)
-      .and(item => item.deletedAt === undefined)
+      .and((item) => item.deletedAt === undefined)
       .toArray();
   }
 
@@ -43,11 +46,11 @@ export class DexieListItemRepository extends DexieBaseRepository<ListItem> imple
     if (listIds.length === 0) {
       return [];
     }
-    
+
     return this.table
-      .where('listId')
+      .where("listId")
       .anyOf(listIds)
-      .and(item => item.deletedAt === undefined)
+      .and((item) => item.deletedAt === undefined)
       .toArray();
   }
 
@@ -62,7 +65,7 @@ export class DexieListItemRepository extends DexieBaseRepository<ListItem> imple
     return this.update(id, {
       isPurchased: true,
       purchasedBy: userId,
-      purchasedAt: now
+      purchasedAt: now,
     });
   }
 
@@ -75,7 +78,7 @@ export class DexieListItemRepository extends DexieBaseRepository<ListItem> imple
     return this.update(id, {
       isPurchased: false,
       purchasedBy: undefined,
-      purchasedAt: undefined
+      purchasedAt: undefined,
     });
   }
 

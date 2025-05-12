@@ -1,6 +1,6 @@
-import { ShoppingList } from '../types/models';
-import { BaseRepository, DexieBaseRepository } from './base-repository';
-import { db } from '../stores/database';
+import { ShoppingList } from "../types/models";
+import { BaseRepository, DexieBaseRepository } from "./base-repository";
+import { db } from "../stores/database";
 
 /**
  * Repository interface for shopping lists
@@ -16,7 +16,10 @@ export interface ShoppingListRepository extends BaseRepository<ShoppingList> {
 /**
  * Dexie implementation of the shopping list repository
  */
-export class DexieShoppingListRepository extends DexieBaseRepository<ShoppingList> implements ShoppingListRepository {
+export class DexieShoppingListRepository
+  extends DexieBaseRepository<ShoppingList>
+  implements ShoppingListRepository
+{
   constructor() {
     super(db.shoppingLists);
   }
@@ -28,9 +31,9 @@ export class DexieShoppingListRepository extends DexieBaseRepository<ShoppingLis
    */
   async findByUser(userId: string): Promise<ShoppingList[]> {
     return this.table
-      .where('createdBy')
+      .where("createdBy")
       .equals(userId)
-      .and(item => item.deletedAt === undefined)
+      .and((item) => item.deletedAt === undefined)
       .toArray();
   }
 
@@ -41,9 +44,9 @@ export class DexieShoppingListRepository extends DexieBaseRepository<ShoppingLis
    */
   async findByCommunity(communityId: string): Promise<ShoppingList[]> {
     return this.table
-      .where('communityId')
+      .where("communityId")
       .equals(communityId)
-      .and(item => item.deletedAt === undefined && item.isShared === true)
+      .and((item) => item.deletedAt === undefined && item.isShared === true)
       .toArray();
   }
 
@@ -55,22 +58,22 @@ export class DexieShoppingListRepository extends DexieBaseRepository<ShoppingLis
   async findSharedWithUser(userId: string): Promise<ShoppingList[]> {
     // Get all list IDs where the user is an owner
     const listOwners = await db.listOwners
-      .where('userId')
+      .where("userId")
       .equals(userId)
-      .and(item => item.deletedAt === undefined)
+      .and((item) => item.deletedAt === undefined)
       .toArray();
-    
-    const listIds = listOwners.map(owner => owner.listId);
-    
+
+    const listIds = listOwners.map((owner) => owner.listId);
+
     if (listIds.length === 0) {
       return [];
     }
-    
+
     // Get all lists with those IDs
     return this.table
-      .where('id')
+      .where("id")
       .anyOf(listIds)
-      .and(item => item.deletedAt === undefined)
+      .and((item) => item.deletedAt === undefined)
       .toArray();
   }
 

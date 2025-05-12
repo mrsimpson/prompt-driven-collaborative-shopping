@@ -8,30 +8,28 @@ module.exports = {
   splash: {
     image: "./assets/splash.png",
     resizeMode: "contain",
-    backgroundColor: "#ffffff"
+    backgroundColor: "#ffffff",
   },
   updates: {
-    fallbackToCacheTimeout: 0
+    fallbackToCacheTimeout: 0,
   },
-  assetBundlePatterns: [
-    "**/*"
-  ],
+  assetBundlePatterns: ["**/*"],
   ios: {
-    supportsTablet: true
+    supportsTablet: true,
   },
   android: {
     adaptiveIcon: {
       foregroundImage: "./assets/adaptive-icon.png",
-      backgroundColor: "#FFFFFF"
-    }
+      backgroundColor: "#FFFFFF",
+    },
   },
   web: {
     bundler: "metro",
     output: "single",
-    favicon: "./assets/favicon.png"
+    favicon: "./assets/favicon.png",
   },
   plugins: ["expo-router", "expo-font", "expo-web-browser"],
   experiments: {
-    typedRoutes: true
-  }
+    typedRoutes: true,
+  },
 };

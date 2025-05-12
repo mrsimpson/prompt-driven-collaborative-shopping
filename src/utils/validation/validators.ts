@@ -18,7 +18,7 @@ export function isValidEmail(email: string): boolean {
  * @returns True if the string is not empty, false otherwise
  */
 export function isNotEmpty(value: string): boolean {
-  return value !== undefined && value !== null && value.trim() !== '';
+  return value !== undefined && value !== null && value.trim() !== "";
 }
 
 /**

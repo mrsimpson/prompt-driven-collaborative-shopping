@@ -44,8 +44,8 @@ export interface CommunityMember extends BaseEntity {
  * Possible roles a user can have in a community
  */
 export enum CommunityRole {
-  ADMIN = 'admin',
-  MEMBER = 'member',
+  ADMIN = "admin",
+  MEMBER = "member",
 }
 
 /**
@@ -96,9 +96,9 @@ export interface ShoppingSession extends BaseEntity {
  * Possible statuses for a shopping session
  */
 export enum ShoppingSessionStatus {
-  ACTIVE = 'active',
-  COMPLETED = 'completed',
-  CANCELLED = 'cancelled',
+  ACTIVE = "active",
+  COMPLETED = "completed",
+  CANCELLED = "cancelled",
 }
 
 /**

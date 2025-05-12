@@ -22,7 +22,7 @@ erDiagram
         timestamp deleted_at
         timestamp last_modified_at
     }
-    
+
     COMMUNITIES {
         uuid community_id PK
         string name
@@ -32,7 +32,7 @@ erDiagram
         timestamp deleted_at
         timestamp last_modified_at
     }
-    
+
     COMMUNITY_MEMBERS {
         uuid community_member_id PK
         uuid community_id FK
@@ -42,7 +42,7 @@ erDiagram
         timestamp deleted_at
         timestamp last_modified_at
     }
-    
+
     SHOPPING_LISTS {
         uuid list_id PK
         string name
@@ -56,7 +56,7 @@ erDiagram
         timestamp deleted_at
         timestamp last_modified_at
     }
-    
+
     LIST_OWNERS {
         uuid list_owner_id PK
         uuid list_id FK
@@ -65,7 +65,7 @@ erDiagram
         timestamp deleted_at
         timestamp last_modified_at
     }
-    
+
     LIST_ITEMS {
         uuid item_id PK
         uuid list_id FK
@@ -80,7 +80,7 @@ erDiagram
         timestamp deleted_at
         timestamp last_modified_at
     }
-    
+
     SHOPPING_SESSIONS {
         uuid session_id PK
         uuid user_id FK
@@ -90,7 +90,7 @@ erDiagram
         timestamp deleted_at
         timestamp last_modified_at
     }
-    
+
     SESSION_LISTS {
         uuid session_list_id PK
         uuid session_id FK
@@ -99,7 +99,7 @@ erDiagram
         timestamp deleted_at
         timestamp last_modified_at
     }
-    
+
     USERS ||--o{ COMMUNITY_MEMBERS : "belongs to"
     COMMUNITIES ||--o{ COMMUNITY_MEMBERS : "has"
     USERS ||--o{ SHOPPING_LISTS : "creates"
@@ -116,6 +116,7 @@ erDiagram
 ## Table Definitions
 
 ### Users Table
+
 ```
 users
 - user_id (PK, UUID)
@@ -129,6 +130,7 @@ users
 ```
 
 ### Communities Table
+
 ```
 communities
 - community_id (PK, UUID)
@@ -141,6 +143,7 @@ communities
 ```
 
 ### Community_Members Table
+
 ```
 community_members
 - community_member_id (PK, UUID)
@@ -153,6 +156,7 @@ community_members
 ```
 
 ### Shopping_Lists Table
+
 ```
 shopping_lists
 - list_id (PK, UUID)
@@ -169,6 +173,7 @@ shopping_lists
 ```
 
 ### List_Owners Table
+
 ```
 list_owners
 - list_owner_id (PK, UUID)
@@ -180,6 +185,7 @@ list_owners
 ```
 
 ### List_Items Table
+
 ```
 list_items
 - item_id (PK, UUID)
@@ -197,6 +203,7 @@ list_items
 ```
 
 ### Shopping_Sessions Table
+
 ```
 shopping_sessions
 - session_id (PK, UUID)
@@ -209,6 +216,7 @@ shopping_sessions
 ```
 
 ### Session_Lists Table
+
 ```
 session_lists
 - session_list_id (PK, UUID)
@@ -241,12 +249,14 @@ The Shopping Sessions and Session Lists tables play crucial roles in the applica
 
 The Shopping_Sessions table tracks active shopping activities and serves several important functions:
 
-1. **Shopping State Management**: 
+1. **Shopping State Management**:
+
    - Records when a user begins shopping (`started_at`)
    - Tracks when shopping is completed (`ended_at`)
    - Maintains the current status of shopping activities (`status`)
 
 2. **List Locking Mechanism**:
+
    - When a shopping session is active, associated lists are locked
    - Prevents concurrent edits to lists that are actively being shopped
    - Ensures data consistency during the shopping process
@@ -261,11 +271,13 @@ The Shopping_Sessions table tracks active shopping activities and serves several
 The Session_Lists table is a junction table that connects shopping sessions to multiple shopping lists:
 
 1. **Multi-List Shopping Support**:
+
    - Allows one shopping session to include multiple lists
    - Enables a shopper to collect items for multiple people/purposes in one trip
    - Maintains the relationship between purchased items and their source lists
 
 2. **Checkout Organization**:
+
    - Facilitates the checkout feature where items are grouped by source list
    - Enables easy sorting of purchased items into separate bags per list
    - Preserves the origin of each item for proper distribution after shopping
@@ -293,14 +305,17 @@ These tables enable the following workflow:
 To enhance this model for robust conflict resolution in the future, consider adding:
 
 1. **Version Control**:
+
    - Add `version` integer field to tables requiring conflict resolution
    - Increment version on each update
 
 2. **Change Tracking**:
+
    - Implement a change log table to track modifications
    - Store both client and server timestamps
 
 3. **Conflict Detection**:
+
    - Compare versions during updates
    - Implement optimistic concurrency control
 

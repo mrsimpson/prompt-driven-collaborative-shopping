@@ -1,14 +1,14 @@
-import { Dexie, Table } from 'dexie';
-import { 
-  User, 
-  Community, 
-  CommunityMember, 
-  ShoppingList, 
-  ListOwner, 
-  ListItem, 
-  ShoppingSession, 
-  SessionList 
-} from '../types/models';
+import { Dexie, Table } from "dexie";
+import {
+  User,
+  Community,
+  CommunityMember,
+  ShoppingList,
+  ListOwner,
+  ListItem,
+  ShoppingSession,
+  SessionList,
+} from "../types/models";
 
 /**
  * ShareMyCartDatabase extends Dexie to provide a local database for the application
@@ -25,18 +25,21 @@ export class ShareMyCartDatabase extends Dexie {
   sessionLists!: Table<SessionList, string>;
 
   constructor() {
-    super('ShareMyCartDatabase');
-    
+    super("ShareMyCartDatabase");
+
     // Define database schema
     this.version(1).stores({
-      users: 'id, username, email, deletedAt, lastModifiedAt',
-      communities: 'id, name, deletedAt, lastModifiedAt',
-      communityMembers: 'id, communityId, userId, role, deletedAt, lastModifiedAt',
-      shoppingLists: 'id, name, createdBy, communityId, isShared, isLocked, deletedAt, lastModifiedAt',
-      listOwners: 'id, listId, userId, deletedAt, lastModifiedAt',
-      listItems: 'id, listId, name, isPurchased, purchasedBy, deletedAt, lastModifiedAt',
-      shoppingSessions: 'id, userId, status, deletedAt, lastModifiedAt',
-      sessionLists: 'id, sessionId, listId, deletedAt, lastModifiedAt'
+      users: "id, username, email, deletedAt, lastModifiedAt",
+      communities: "id, name, deletedAt, lastModifiedAt",
+      communityMembers:
+        "id, communityId, userId, role, deletedAt, lastModifiedAt",
+      shoppingLists:
+        "id, name, createdBy, communityId, isShared, isLocked, deletedAt, lastModifiedAt",
+      listOwners: "id, listId, userId, deletedAt, lastModifiedAt",
+      listItems:
+        "id, listId, name, isPurchased, purchasedBy, deletedAt, lastModifiedAt",
+      shoppingSessions: "id, userId, status, deletedAt, lastModifiedAt",
+      sessionLists: "id, sessionId, listId, deletedAt, lastModifiedAt",
     });
   }
 
@@ -45,81 +48,81 @@ export class ShareMyCartDatabase extends Dexie {
    */
   async initializeDatabase(): Promise<void> {
     const userCount = await this.users.count();
-    
+
     if (userCount === 0) {
       const now = new Date();
-      
+
       // Create a default user
-      const defaultUserId = 'default-user-id';
+      const defaultUserId = "default-user-id";
       await this.users.add({
         id: defaultUserId,
-        username: 'Default User',
-        email: 'user@example.com',
+        username: "Default User",
+        email: "user@example.com",
         createdAt: now,
         updatedAt: now,
-        lastModifiedAt: now
+        lastModifiedAt: now,
       });
-      
+
       // Create a sample shopping list
-      const sampleListId = 'sample-list-id';
+      const sampleListId = "sample-list-id";
       await this.shoppingLists.add({
         id: sampleListId,
-        name: 'My First Shopping List',
-        description: 'A sample shopping list to get started',
+        name: "My First Shopping List",
+        description: "A sample shopping list to get started",
         createdBy: defaultUserId,
         isShared: false,
         isLocked: false,
         createdAt: now,
         updatedAt: now,
-        lastModifiedAt: now
+        lastModifiedAt: now,
       });
-      
+
       // Make the default user an owner of the list
       await this.listOwners.add({
-        id: 'sample-list-owner-id',
+        id: "sample-list-owner-id",
         listId: sampleListId,
         userId: defaultUserId,
         addedAt: now,
         createdAt: now,
         updatedAt: now,
-        lastModifiedAt: now
+        lastModifiedAt: now,
       });
-      
+
       // Add some sample items to the list
       await this.listItems.bulkAdd([
         {
-          id: 'sample-item-1',
+          id: "sample-item-1",
           listId: sampleListId,
-          name: 'Milk',
+          name: "Milk",
           quantity: 1,
-          unit: 'liter',
+          unit: "liter",
           isPurchased: false,
           createdAt: now,
           updatedAt: now,
-          lastModifiedAt: now
+          lastModifiedAt: now,
         },
         {
-          id: 'sample-item-2',
+          id: "sample-item-2",
           listId: sampleListId,
-          name: 'Bread',
+          name: "Bread",
           quantity: 1,
-          unit: 'loaf',
+          unit: "loaf",
           isPurchased: false,
           createdAt: now,
           updatedAt: now,
-          lastModifiedAt: now
+          lastModifiedAt: now,
         },
         {
-          id: 'sample-item-3',
+          id: "sample-item-3",
           listId: sampleListId,
-          name: 'Eggs',
+          name: "Eggs",
           quantity: 12,
-          unit: 'pcs',
+          unit: "pcs",
           isPurchased: false,
           createdAt: now,
           updatedAt: now,
-          lastModifiedAt: now
-        }
+          lastModifiedAt: now,
+        },
       ]);
     }
   }

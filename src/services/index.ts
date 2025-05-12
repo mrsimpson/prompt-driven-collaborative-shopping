@@ -1,6 +1,12 @@
-import { UserService, LocalUserService } from './user-service';
-import { ShoppingListService, LocalShoppingListService } from './shopping-list-service';
-import { ShoppingSessionService, LocalShoppingSessionService } from './shopping-session-service';
+import { UserService, LocalUserService } from "./user-service";
+import {
+  ShoppingListService,
+  LocalShoppingListService,
+} from "./shopping-list-service";
+import {
+  ShoppingSessionService,
+  LocalShoppingSessionService,
+} from "./shopping-session-service";
 
 /**
  * Factory for creating service instances

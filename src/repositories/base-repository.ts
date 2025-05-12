@@ -1,6 +1,6 @@
-import { Table } from 'dexie';
-import { BaseEntity } from '../types/models';
-import { generateUUID } from '../utils/uuid';
+import { Table } from "dexie";
+import { BaseEntity } from "../types/models";
+import { generateUUID } from "../utils/uuid";
 
 /**
  * Base repository interface for CRUD operations
@@ -18,7 +18,9 @@ export interface BaseRepository<T extends BaseEntity> {
 /**
  * Base repository implementation using Dexie.js
  */
-export abstract class DexieBaseRepository<T extends BaseEntity> implements BaseRepository<T> {
+export abstract class DexieBaseRepository<T extends BaseEntity>
+  implements BaseRepository<T>
+{
   protected table: Table<T, string>;
 
   constructor(table: Table<T, string>) {
@@ -47,7 +49,7 @@ export abstract class DexieBaseRepository<T extends BaseEntity> implements BaseR
    * @returns Array of active entities
    */
   async findActive(): Promise<T[]> {
-    return this.table.where('deletedAt').equals(undefined).toArray();
+    return this.table.where("deletedAt").equals(undefined).toArray();
   }
 
   /**
@@ -58,15 +60,15 @@ export abstract class DexieBaseRepository<T extends BaseEntity> implements BaseR
   async save(entity: Partial<T>): Promise<T> {
     const now = new Date();
     const isNew = !entity.id;
-    
+
     const fullEntity = {
       ...entity,
       id: entity.id || generateUUID(),
-      createdAt: isNew ? now : (entity.createdAt || now),
+      createdAt: isNew ? now : entity.createdAt || now,
       updatedAt: now,
-      lastModifiedAt: now
+      lastModifiedAt: now,
     } as T;
-    
+
     await this.table.put(fullEntity);
     return fullEntity;
   }
@@ -82,15 +84,15 @@ export abstract class DexieBaseRepository<T extends BaseEntity> implements BaseR
     if (!entity) {
       throw new Error(`Entity with ID ${id} not found`);
     }
-    
+
     const now = new Date();
     const updatedEntity = {
       ...entity,
       ...updates,
       updatedAt: now,
-      lastModifiedAt: now
+      lastModifiedAt: now,
     };
-    
+
     await this.table.put(updatedEntity);
     return updatedEntity;
   }
@@ -104,11 +106,11 @@ export abstract class DexieBaseRepository<T extends BaseEntity> implements BaseR
     if (!entity) {
       throw new Error(`Entity with ID ${id} not found`);
     }
-    
+
     const now = new Date();
     await this.table.update(id, {
       deletedAt: now,
-      lastModifiedAt: now
+      lastModifiedAt: now,
     } as Partial<T>);
   }
 

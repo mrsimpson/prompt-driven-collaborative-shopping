@@ -1,24 +1,37 @@
-import { ShoppingSession, SessionList, ShoppingSessionStatus } from '../types/models';
-import { BaseRepository, DexieBaseRepository } from './base-repository';
-import { db } from '../stores/database';
-import { generateUUID } from '../utils/uuid';
+import {
+  ShoppingSession,
+  SessionList,
+  ShoppingSessionStatus,
+} from "../types/models";
+import { BaseRepository, DexieBaseRepository } from "./base-repository";
+import { db } from "../stores/database";
+import { generateUUID } from "../utils/uuid";
 
 /**
  * Repository interface for shopping sessions
  */
-export interface ShoppingSessionRepository extends BaseRepository<ShoppingSession> {
+export interface ShoppingSessionRepository
+  extends BaseRepository<ShoppingSession> {
   findActiveByUser(userId: string): Promise<ShoppingSession | null>;
-  findWithLists(sessionId: string): Promise<{ session: ShoppingSession, lists: string[] }>;
+  findWithLists(
+    sessionId: string,
+  ): Promise<{ session: ShoppingSession; lists: string[] }>;
   addListToSession(sessionId: string, listId: string): Promise<void>;
   removeListFromSession(sessionId: string, listId: string): Promise<void>;
   getSessionLists(sessionId: string): Promise<string[]>;
-  endSession(sessionId: string, status: ShoppingSessionStatus): Promise<ShoppingSession>;
+  endSession(
+    sessionId: string,
+    status: ShoppingSessionStatus,
+  ): Promise<ShoppingSession>;
 }
 
 /**
  * Dexie implementation of the shopping session repository
  */
-export class DexieShoppingSessionRepository extends DexieBaseRepository<ShoppingSession> implements ShoppingSessionRepository {
+export class DexieShoppingSessionRepository
+  extends DexieBaseRepository<ShoppingSession>
+  implements ShoppingSessionRepository
+{
   constructor() {
     super(db.shoppingSessions);
   }
@@ -29,11 +42,17 @@ export class DexieShoppingSessionRepository extends DexieBaseRepository<Shopping
    * @returns The active session or null if none exists
    */
   async findActiveByUser(userId: string): Promise<ShoppingSession | null> {
-    return this.table
-      .where('userId')
-      .equals(userId)
-      .and(session => session.status === ShoppingSessionStatus.ACTIVE && session.deletedAt === undefined)
-      .first() || null;
+    return (
+      this.table
+        .where("userId")
+        .equals(userId)
+        .and(
+          (session) =>
+            session.status === ShoppingSessionStatus.ACTIVE &&
+            session.deletedAt === undefined,
+        )
+        .first() || null
+    );
   }
 
   /**
@@ -41,23 +60,25 @@ export class DexieShoppingSessionRepository extends DexieBaseRepository<Shopping
    * @param sessionId The session ID
    * @returns The session and array of list IDs
    */
-  async findWithLists(sessionId: string): Promise<{ session: ShoppingSession, lists: string[] }> {
+  async findWithLists(
+    sessionId: string,
+  ): Promise<{ session: ShoppingSession; lists: string[] }> {
     const session = await this.findById(sessionId);
     if (!session) {
       throw new Error(`Session with ID ${sessionId} not found`);
     }
-    
+
     const sessionLists = await db.sessionLists
-      .where('sessionId')
+      .where("sessionId")
       .equals(sessionId)
-      .and(item => item.deletedAt === undefined)
+      .and((item) => item.deletedAt === undefined)
       .toArray();
-    
-    const listIds = sessionLists.map(sl => sl.listId);
-    
+
+    const listIds = sessionLists.map((sl) => sl.listId);
+
     return {
       session,
-      lists: listIds
+      lists: listIds,
     };
   }
 
@@ -68,7 +89,7 @@ export class DexieShoppingSessionRepository extends DexieBaseRepository<Shopping
    */
   async addListToSession(sessionId: string, listId: string): Promise<void> {
     const now = new Date();
-    
+
     const sessionList: SessionList = {
       id: generateUUID(),
       sessionId,
@@ -76,9 +97,9 @@ export class DexieShoppingSessionRepository extends DexieBaseRepository<Shopping
       addedAt: now,
       createdAt: now,
       updatedAt: now,
-      lastModifiedAt: now
+      lastModifiedAt: now,
     };
-    
+
     await db.sessionLists.add(sessionList);
   }
 
@@ -87,17 +108,20 @@ export class DexieShoppingSessionRepository extends DexieBaseRepository<Shopping
    * @param sessionId The session ID
    * @param listId The list ID to remove
    */
-  async removeListFromSession(sessionId: string, listId: string): Promise<void> {
+  async removeListFromSession(
+    sessionId: string,
+    listId: string,
+  ): Promise<void> {
     const sessionList = await db.sessionLists
-      .where('sessionId')
+      .where("sessionId")
       .equals(sessionId)
-      .and(item => item.listId === listId && item.deletedAt === undefined)
+      .and((item) => item.listId === listId && item.deletedAt === undefined)
       .first();
-    
+
     if (sessionList) {
       await db.sessionLists.update(sessionList.id, {
         deletedAt: new Date(),
-        lastModifiedAt: new Date()
+        lastModifiedAt: new Date(),
       });
     }
   }
@@ -109,12 +133,12 @@ export class DexieShoppingSessionRepository extends DexieBaseRepository<Shopping
    */
   async getSessionLists(sessionId: string): Promise<string[]> {
     const sessionLists = await db.sessionLists
-      .where('sessionId')
+      .where("sessionId")
       .equals(sessionId)
-      .and(item => item.deletedAt === undefined)
+      .and((item) => item.deletedAt === undefined)
       .toArray();
-    
-    return sessionLists.map(sl => sl.listId);
+
+    return sessionLists.map((sl) => sl.listId);
   }
 
   /**
@@ -123,10 +147,13 @@ export class DexieShoppingSessionRepository extends DexieBaseRepository<Shopping
    * @param status The final status (completed or cancelled)
    * @returns The updated session
    */
-  async endSession(sessionId: string, status: ShoppingSessionStatus): Promise<ShoppingSession> {
+  async endSession(
+    sessionId: string,
+    status: ShoppingSessionStatus,
+  ): Promise<ShoppingSession> {
     return this.update(sessionId, {
       status,
-      endedAt: new Date()
+      endedAt: new Date(),
     });
   }
 }

@@ -196,11 +196,13 @@ Located in `supabase/functions/` directory, these handle more complex operations
 This approach ensures data consistency is maintained at the database level rather than relying on client-side enforcement.
 
 1. **Feature Development**:
+
    - Create a new branch for each feature
    - Implement the feature with appropriate tests
    - Submit a pull request for review
 
 2. **Testing**:
+
    - Write unit tests for all components and services
    - Run the test suite before submitting pull requests
    - Aim for >80% test coverage
