@@ -1,9 +1,25 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import React, { useState, useEffect, useRef } from 'react';
+import { View, Text, TouchableOpacity, StyleSheet, Animated, Alert, Platform, Dimensions } from 'react-native';
 import { Edit2, Trash2, GripVertical } from 'lucide-react-native';
 import { colors } from '@/src/styles/common';
 import { ListItem} from '@/src/types/models';
 import { InlineEdit } from './InlineEdit';
+import { Swipeable, RectButton } from 'react-native-gesture-handler';
+
+// Helper function to detect if we're on mobile web
+const isMobileWeb = () => {
+  if (Platform.OS !== 'web') return false;
+  
+  // Check if window and navigator exist (they should in web environment)
+  if (typeof window !== 'undefined' && window.navigator) {
+    const userAgent = window.navigator.userAgent || '';
+    return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(userAgent);
+  }
+  
+  // Fallback to screen size check
+  const windowWidth = Dimensions.get('window').width;
+  return windowWidth < 768; // Common breakpoint for mobile devices
+};
 
 interface ShoppingListItemProps {
   item: ListItem;
@@ -24,6 +40,7 @@ export const ShoppingListItem: React.FC<ShoppingListItemProps> = ({
   const [editName, setEditName] = useState(item.name);
   const [editQuantity, setEditQuantity] = useState(item.quantity.toString());
   const [editUnit, setEditUnit] = useState(item.unit);
+  const swipeableRef = useRef<Swipeable>(null);
 
   // Update local state when item props change
   useEffect(() => {
@@ -94,77 +111,142 @@ export const ShoppingListItem: React.FC<ShoppingListItemProps> = ({
     handleSaveAll(editName, editQuantity, currentValue);
   };
 
+  const handleDelete = async () => {
+    try {
+      await onDelete(item.id);
+      // Close the swipeable after deletion
+      swipeableRef.current?.close();
+    } catch (error) {
+      console.error("Error deleting item:", error);
+      Alert.alert("Error", "Failed to delete item");
+    }
+  };
+
+  // Determine if we should show quantity and unit (only when quantity > 1)
+  const showQuantityAndUnit = isEditing || item.quantity > 1;
+
+  // Render the delete action for swipe
+  const renderRightActions = (
+    progress: Animated.AnimatedInterpolation<number>,
+    dragX: Animated.AnimatedInterpolation<number>
+  ) => {
+    const trans = dragX.interpolate({
+      inputRange: [-80, 0],
+      outputRange: [0, 80],
+      extrapolate: 'clamp',
+    });
+    
+    const opacity = dragX.interpolate({
+      inputRange: [-80, -60, 0],
+      outputRange: [1, 0.5, 0],
+      extrapolate: 'clamp',
+    });
+
+    return (
+      <RectButton style={styles.deleteAction} onPress={handleDelete}>
+        <Animated.View 
+          style={[
+            styles.deleteActionContent,
+            {
+              transform: [{ translateX: trans }],
+              opacity,
+            },
+          ]}
+        >
+          <Trash2 size={20} color={colors.white} />
+          <Text style={styles.deleteActionText}>Delete</Text>
+        </Animated.View>
+      </RectButton>
+    );
+  };
+
+  // Don't enable swipe when in editing mode or when dragging
+  const enableSwipe = !isEditing && !isDragging;
+
   return (
-    <View style={[
-      styles.itemRow, 
-      isDragging && styles.draggingItem
-    ]}>
-      <TouchableOpacity 
-        style={styles.dragHandle}
-        {...dragHandleProps}
-      >
-        <GripVertical size={18} color={colors.gray400} />
-      </TouchableOpacity>
-      
-      <View style={styles.itemContent}>
-        <View style={styles.itemNameContainer}>
-          <InlineEdit
-            value={editName}
-            onSave={handleNameChange}
-            isEditing={isEditing}
-            setIsEditing={setIsEditing}
-            textStyle={styles.itemName}
-            inputStyle={styles.itemNameInput}
-            placeholder="Item name"
-            onSubmitEditing={handleNameSubmit}
-            autoFocus={false}
-          />
-        </View>
+    <Swipeable
+      ref={swipeableRef}
+      renderRightActions={renderRightActions}
+      friction={2}
+      rightThreshold={40}
+      enabled={enableSwipe}
+    >
+      <View style={[
+        styles.itemRow, 
+        isDragging && styles.draggingItem
+      ]}>
+        <TouchableOpacity 
+          style={styles.dragHandle}
+          {...dragHandleProps}
+        >
+          <GripVertical size={16} color={colors.gray400} />
+        </TouchableOpacity>
         
-        <View style={styles.quantityUnitContainer}>
-          <InlineEdit
-            value={editQuantity}
-            onSave={handleQuantityChange}
-            isEditing={isEditing}
-            setIsEditing={setIsEditing}
-            textStyle={styles.itemQuantity}
-            inputStyle={styles.quantityInput}
-            keyboardType="numeric"
-            placeholder="1"
-            onSubmitEditing={handleQuantitySubmit}
-            autoFocus={isEditing} // Focus on quantity when editing starts
-          />
-          
-          <Text style={styles.unitSeparator}>{isEditing ? '' : ' '}</Text>
-          
-          <InlineEdit
-            value={editUnit}
-            onSave={handleUnitChange}
-            isEditing={isEditing}
-            setIsEditing={setIsEditing}
-            textStyle={styles.itemQuantity}
-            inputStyle={styles.unitInput}
-            placeholder="pc"
-            onSubmitEditing={handleUnitSubmit}
-            autoFocus={false}
-          />
+        <View style={styles.itemContent}>
+          <View style={styles.contentRow}>
+            <InlineEdit
+              value={editName}
+              onSave={handleNameChange}
+              isEditing={isEditing}
+              setIsEditing={setIsEditing}
+              textStyle={styles.itemName}
+              inputStyle={styles.itemNameInput}
+              placeholder="Item name"
+              onSubmitEditing={handleNameSubmit}
+              autoFocus={false}
+            />
+            
+            {showQuantityAndUnit && (
+              <View style={styles.quantityUnitContainer}>
+                <InlineEdit
+                  value={editQuantity}
+                  onSave={handleQuantityChange}
+                  isEditing={isEditing}
+                  setIsEditing={setIsEditing}
+                  textStyle={styles.itemQuantity}
+                  inputStyle={styles.quantityInput}
+                  keyboardType="numeric"
+                  placeholder="1"
+                  onSubmitEditing={handleQuantitySubmit}
+                  autoFocus={isEditing} // Focus on quantity when editing starts
+                />
+                
+                <Text style={styles.unitSeparator}>{isEditing ? '' : ' '}</Text>
+                
+                <InlineEdit
+                  value={editUnit}
+                  onSave={handleUnitChange}
+                  isEditing={isEditing}
+                  setIsEditing={setIsEditing}
+                  textStyle={styles.itemQuantity}
+                  inputStyle={styles.unitInput}
+                  placeholder="pc"
+                  onSubmitEditing={handleUnitSubmit}
+                  autoFocus={false}
+                />
+              </View>
+            )}
+          </View>
         </View>
+
+        <TouchableOpacity
+          style={styles.editButton}
+          onPress={handleStartEditing}
+        >
+          <Edit2 size={16} color={colors.primary} />
+        </TouchableOpacity>
+
+        {/* Only show delete button on desktop */}
+        {Platform.OS === 'web' && !isMobileWeb() && (
+          <TouchableOpacity
+            style={styles.deleteButton}
+            onPress={handleDelete}
+          >
+            <Trash2 size={16} color={colors.danger} />
+          </TouchableOpacity>
+        )}
       </View>
-
-      <TouchableOpacity
-        style={styles.editButton}
-        onPress={handleStartEditing}
-      >
-        <Edit2 size={18} color={colors.primary} />
-      </TouchableOpacity>
-
-      <TouchableOpacity
-        style={styles.deleteButton}
-        onPress={() => onDelete(item.id)}
-      >
-        <Trash2 size={18} color={colors.danger} />
-      </TouchableOpacity>
-    </View>
+    </Swipeable>
   );
 };
 
@@ -173,9 +255,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: colors.white,
-    padding: 16,
+    padding: Platform.OS === 'web' && !isMobileWeb() ? 10 : 8, // Less padding on mobile
     borderRadius: 8,
-    marginBottom: 8,
+    marginBottom: Platform.OS === 'web' && !isMobileWeb() ? 6 : 3, // Less margin on mobile
     borderWidth: 1,
     borderColor: colors.gray200,
   },
@@ -193,21 +275,26 @@ const styles = StyleSheet.create({
   itemContent: {
     flex: 1,
   },
-  itemNameContainer: {
+  contentRow: {
     flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
   },
   quantityUnitContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: 2,
+    marginLeft: 8,
+    marginRight:16,
   },
   itemName: {
-    fontSize: 16,
+    fontSize: 15, // Slightly smaller font
     fontWeight: '500',
     color: colors.black,
+    flex: 1,
   },
   itemNameInput: {
-    width: '100%',
+    flex: 1,
+    minWidth: 100,
   },
   itemQuantity: {
     fontSize: 14,
@@ -218,7 +305,8 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   unitInput: {
-    width: 60,
+    width: 40,
+    textAlign: 'center',
   },
   unitSeparator: {
     fontSize: 14,
@@ -226,17 +314,38 @@ const styles = StyleSheet.create({
     marginHorizontal: 2,
   },
   dragHandle: {
-    marginRight: 12,
+    marginRight: 8, // Reduced margin
     justifyContent: 'center',
-    width: 30,
-    height: 30,
+    width: 24, // Smaller width
+    height: 24, // Smaller height
     alignItems: 'center',
   },
   deleteButton: {
-    padding: 8,
+    padding: 6, // Smaller padding
   },
   editButton: {
-    padding: 8,
-    marginRight: 8,
+    padding: 6, // Smaller padding
+    marginRight: 4, // Reduced margin
+  },
+  deleteAction: {
+    backgroundColor: colors.danger,
+    justifyContent: 'center',
+    alignItems: 'flex-end',
+    width: 80,
+    borderRadius: 8,
+    marginBottom: Platform.OS === 'web' && !isMobileWeb() ? 6 : 3, // Match the item margin
+  },
+  deleteActionContent: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    width: 80,
+    flexDirection: 'row',
+  },
+  deleteActionText: {
+    color: colors.white,
+    fontWeight: '500',
+    fontSize: 14,
+    marginLeft: 4,
   },
 });

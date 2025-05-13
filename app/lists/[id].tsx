@@ -8,6 +8,7 @@ import {
   Alert,
   KeyboardAvoidingView,
   Platform,
+  Dimensions,
 } from "react-native";
 import { useLocalSearchParams, router } from "expo-router";
 import { Plus, ShoppingBag } from "lucide-react-native";
@@ -18,6 +19,21 @@ import { ListItem } from "@/src/types/models";
 import { ShoppingListItem } from "@/src/components/ShoppingListItem";
 import { SortableList } from "@/src/components/SortableList";
 import { SortableItem } from "@/src/components/SortableItem";
+
+// Helper function to detect if we're on mobile
+const isMobile = () => {
+  if (Platform.OS !== 'web') return true;
+  
+  // Check if window and navigator exist (they should in web environment)
+  if (typeof window !== 'undefined' && window.navigator) {
+    const userAgent = window.navigator.userAgent || '';
+    return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(userAgent);
+  }
+  
+  // Fallback to screen size check
+  const windowWidth = Dimensions.get('window').width;
+  return windowWidth < 768; // Common breakpoint for mobile devices
+};
 
 const styles = {
   addItemForm: {
@@ -36,8 +52,7 @@ const styles = {
   },
   quantityContainer: {
     flexDirection: "row" as const,
-    width: 100,
-    marginRight: 8,
+    alignItems: "center",
   },
   quantityInput: {
     width: 40,
@@ -45,13 +60,15 @@ const styles = {
     borderRadius: 6,
     padding: 12,
     textAlign: "center",
+    marginRight: 4,
   },
   unitInput: {
-    flex: 1,
+    width: 40, // Narrower width for unit input
     backgroundColor: colors.gray100,
     borderRadius: 6,
     padding: 12,
-    marginLeft: 4,
+    textAlign: "center",
+    marginRight: 8,
   },
   footer: {
     position: "absolute",
@@ -83,18 +100,12 @@ const styles = {
     marginBottom: 16,
   },
   listContent: {
-    padding: 16,
+    padding: isMobile() ? 4 : 16,
     paddingBottom: 80, // Extra padding for the footer
-  },
-  sortInstructions: {
-    textAlign: "center",
-    color: colors.gray500,
-    marginBottom: 8,
-    fontSize: 12,
   },
   listContainer: {
     flex: 1,
-    padding: 16,
+    padding: isMobile() ? 8 : 16,
     paddingBottom: 80, // Extra padding for the footer
   },
   emptyState: {
@@ -299,6 +310,8 @@ export default function ListDetailScreen() {
             onChangeText={setNewItemQuantity}
             keyboardType="numeric"
             editable={!isAddingItem}
+            onSubmitEditing={handleAddItem}
+            returnKeyType="done"
           />
           <TextInput
             style={styles.unitInput}
@@ -306,6 +319,8 @@ export default function ListDetailScreen() {
             onChangeText={setNewItemUnit}
             placeholder="pc"
             editable={!isAddingItem}
+            onSubmitEditing={handleAddItem}
+            returnKeyType="done"
           />
         </View>
         <TouchableOpacity
@@ -330,10 +345,6 @@ export default function ListDetailScreen() {
         </View>
       ) : (
         <View style={styles.listContainer}>
-          <Text style={styles.sortInstructions}>
-            Drag items by the grip handle to reorder
-          </Text>
-
           <SortableList
             items={localItems}
             renderItem={renderSortableItem}
