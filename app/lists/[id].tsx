@@ -268,6 +268,7 @@ export default function ListDetailScreen() {
           onUpdate={handleUpdateItem}
           onDelete={handleDeleteItem}
           isDragging={isDragging}
+          mode="edit"
         />
       </SortableItem>
     );

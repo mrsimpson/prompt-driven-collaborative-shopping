@@ -6,14 +6,18 @@ import {
   FlatList,
   TouchableOpacity,
   ActivityIndicator,
+  Platform,
+  Dimensions,
 } from "react-native";
 import { router, useLocalSearchParams, useNavigation } from "expo-router";
-import { Check, ShoppingBag } from "lucide-react-native";
+import { ShoppingBag } from "lucide-react-native";
 import { HeaderWithBack } from "@/src/components/HeaderWithBack";
 import { colors, layout, typography, buttons } from "@/src/styles/common";
 import { useShoppingSession } from "@/src/hooks";
 import { ShoppingSessionStatus } from "@/src/types/models";
 import { CrossPlatformAlert } from "@/src/components/CrossPlatformAlert";
+import { ShoppingListItem } from "@/src/components/ShoppingListItem";
+import { isMobile } from "@/src/utils/isMobile";
 
 export default function ShoppingSessionScreen() {
   const params = useLocalSearchParams();
@@ -226,9 +230,11 @@ export default function ShoppingSessionScreen() {
                 {listItems.map((item) => (
                   <View key={item.id} style={styles.checkoutItem}>
                     <Text style={styles.checkoutItemName}>{item.name}</Text>
-                    <Text style={styles.checkoutItemQuantity}>
-                      {item.quantity} {item.unit}
-                    </Text>
+                    {item.quantity > 1 && (
+                      <Text style={styles.checkoutItemQuantity}>
+                        {item.quantity} {item.unit}
+                      </Text>
+                    )}
                   </View>
                 ))}
               </View>
@@ -259,7 +265,7 @@ export default function ShoppingSessionScreen() {
       />
 
       <FlatList
-        data={items}
+        data={items.sort((a, b) => a.sortOrder - b.sortOrder)}
         keyExtractor={(item) => {
           // Generate a stable ID for each item
           if (!item.id) {
@@ -273,49 +279,17 @@ export default function ShoppingSessionScreen() {
           const sourceList = lists.find((list) => list.id === item.listId);
 
           return (
-            <TouchableOpacity
-              style={[
-                styles.itemRow,
-                item.isPurchased && styles.itemRowPurchased,
-              ]}
-              onPress={() => {
-                // Make sure the item has an ID before trying to toggle its status
-                if (!item.id) {
-                  CrossPlatformAlert.show(
-                    "Error",
-                    "Cannot update this item because it has no ID",
-                  );
-                  return;
+            <ShoppingListItem
+              item={item}
+              onUpdate={(id, updates) => {
+                // For shopping mode, we only care about the isPurchased property
+                if (updates.isPurchased !== undefined) {
+                  handleToggleItemPurchased(id, !updates.isPurchased);
                 }
-                handleToggleItemPurchased(item.id, !!item.isPurchased);
               }}
-            >
-              <View
-                style={[
-                  styles.checkbox,
-                  item.isPurchased && styles.checkboxChecked,
-                ]}
-              >
-                {item.isPurchased && <Check size={16} color="#FFFFFF" />}
-              </View>
-
-              <View style={styles.itemDetails}>
-                <Text
-                  style={[
-                    styles.itemName,
-                    item.isPurchased && styles.itemPurchased,
-                  ]}
-                >
-                  {item.name}
-                </Text>
-                <Text style={styles.itemQuantity}>
-                  {item.quantity} {item.unit}
-                </Text>
-                <Text style={styles.itemSource}>
-                  From: {sourceList?.name || "Unknown List"}
-                </Text>
-              </View>
-            </TouchableOpacity>
+              mode="shopping"
+              sourceListName={sourceList?.name}
+            />
           );
         }}
         contentContainerStyle={styles.listContent}
@@ -342,56 +316,8 @@ const styles = StyleSheet.create({
     backgroundColor: colors.gray50,
   },
   listContent: {
-    padding: 16,
+    padding: isMobile() ? 4 : 16,
     paddingBottom: 80, // Extra padding for the footer
-  },
-  itemRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: colors.white,
-    padding: 16,
-    borderRadius: 8,
-    marginBottom: 8,
-    borderWidth: 1,
-    borderColor: colors.gray200,
-  },
-  itemRowPurchased: {
-    backgroundColor: colors.gray100,
-  },
-  checkbox: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    borderWidth: 2,
-    borderColor: colors.primary,
-    justifyContent: "center",
-    alignItems: "center",
-    marginRight: 12,
-  },
-  checkboxChecked: {
-    backgroundColor: colors.primary,
-  },
-  itemDetails: {
-    flex: 1,
-  },
-  itemName: {
-    fontSize: 16,
-    fontWeight: "500",
-    color: colors.black,
-  },
-  itemPurchased: {
-    textDecorationLine: "line-through",
-    color: colors.gray400,
-  },
-  itemQuantity: {
-    fontSize: 14,
-    color: colors.gray500,
-    marginTop: 2,
-  },
-  itemSource: {
-    fontSize: 12,
-    color: colors.gray400,
-    marginTop: 4,
   },
   footer: {
     position: "absolute",
