@@ -6,7 +6,7 @@ import {
   TouchableOpacity,
   ActivityIndicator,
 } from "react-native";
-import { Link } from "expo-router";
+import { router } from "expo-router";
 import { Plus } from "lucide-react-native";
 import {
   layout,
@@ -61,11 +61,12 @@ export default function ListsScreen() {
         <View style={headers.titleContainer}>
           <Text style={typography.title}>My Shopping Lists</Text>
         </View>
-        <Link href="/lists/new" asChild>
-          <TouchableOpacity style={buttons.icon}>
-            <Plus size={24} color={colors.white} />
-          </TouchableOpacity>
-        </Link>
+        <TouchableOpacity 
+          style={buttons.icon}
+          onPress={() => router.push("/lists/new")}
+        >
+          <Plus size={24} color={colors.white} />
+        </TouchableOpacity>
       </View>
 
       {shoppingLists.length === 0 ? (
@@ -73,27 +74,29 @@ export default function ListsScreen() {
           <Text style={typography.body}>
             You don&apos;t have any shopping lists yet.
           </Text>
-          <Link href="/lists/new" asChild>
-            <TouchableOpacity style={[buttons.primary, { marginTop: 16 }]}>
-              <Text style={typography.buttonText}>Create Your First List</Text>
-            </TouchableOpacity>
-          </Link>
+          <TouchableOpacity 
+            style={[buttons.primary, { marginTop: 16 }]}
+            onPress={() => router.push("/lists/new")}
+          >
+            <Text style={typography.buttonText}>Create Your First List</Text>
+          </TouchableOpacity>
         </View>
       ) : (
         <FlatList
           data={shoppingLists}
           keyExtractor={(item) => item.id}
           renderItem={({ item }) => (
-            <Link href={`/lists/${item.id}`} asChild>
-              <TouchableOpacity style={lists.item}>
-                <View>
-                  <Text style={typography.body}>{item.name}</Text>
-                  <Text style={typography.bodySmall}>
-                    {item.description ? item.description : "No description"}
-                  </Text>
-                </View>
-              </TouchableOpacity>
-            </Link>
+            <TouchableOpacity 
+              style={lists.item}
+              onPress={() => router.push(`/lists/${item.id}`)}
+            >
+              <View>
+                <Text style={typography.body}>{item.name}</Text>
+                <Text style={typography.bodySmall}>
+                  {item.description ? item.description : "No description"}
+                </Text>
+              </View>
+            </TouchableOpacity>
           )}
           contentContainerStyle={lists.content}
           refreshing={loading}
