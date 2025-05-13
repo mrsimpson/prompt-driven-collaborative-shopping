@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useRef, useEffect } from "react";
 import { Alert, Platform } from "react-native";
 import { WebAlert } from "./WebAlert";
 
@@ -10,6 +10,9 @@ export interface AlertButton {
   onPress: () => void;
   style?: "default" | "cancel" | "destructive";
 }
+
+// Map to store React roots by alert ID
+const alertRoots = new Map();
 
 /**
  * Cross-platform alert service that uses the appropriate alert mechanism based on platform
@@ -59,8 +62,16 @@ export const CrossPlatformAlert = {
         // Force re-render to hide the alert
         renderAlert();
 
-        // Remove the alert container after animation completes
+        // Remove the alert container and clean up the root after animation completes
         setTimeout(() => {
+          // Clean up the React root
+          const root = alertRoots.get(alertId);
+          if (root) {
+            root.unmount();
+            alertRoots.delete(alertId);
+          }
+          
+          // Remove the DOM element
           const element = document.getElementById(alertId);
           if (element) {
             element.remove();
@@ -86,11 +97,10 @@ export const CrossPlatformAlert = {
           const ReactDOM = require("react-dom/client");
 
           // Get or create the root
-          // Use a property name that doesn't conflict with TypeScript definitions
-          let root = (alertContainer as any)._reactRootCustom;
+          let root = alertRoots.get(alertId);
           if (!root) {
             root = ReactDOM.createRoot(alertContainer);
-            (alertContainer as any)._reactRootCustom = root;
+            alertRoots.set(alertId, root);
           }
 
           // Render the WebAlert component
