@@ -11,6 +11,8 @@ export interface ListItemRepository extends BaseRepository<ListItem> {
   markAsPurchased(id: string, userId: string): Promise<ListItem>;
   markAsUnpurchased(id: string): Promise<ListItem>;
   moveToList(id: string, newListId: string): Promise<ListItem>;
+  updateSortOrder(id: string, sortOrder: number): Promise<ListItem>;
+  reorderItems(listId: string, itemIds: string[]): Promise<void>;
 }
 
 /**
@@ -34,7 +36,7 @@ export class DexieListItemRepository
       .where("listId")
       .equals(listId)
       .and((item) => item.deletedAt === undefined)
-      .toArray();
+      .sortBy("sortOrder");
   }
 
   /**
@@ -90,5 +92,32 @@ export class DexieListItemRepository
    */
   async moveToList(id: string, newListId: string): Promise<ListItem> {
     return this.update(id, { listId: newListId });
+  }
+
+  /**
+   * Update the sort order of an item
+   * @param id The item ID
+   * @param sortOrder The new sort order
+   * @returns The updated item
+   */
+  async updateSortOrder(id: string, sortOrder: number): Promise<ListItem> {
+    return this.update(id, { sortOrder });
+  }
+
+  /**
+   * Reorder items in a list based on the provided item IDs order
+   * @param listId The list ID
+   * @param itemIds Array of item IDs in the desired order
+   */
+  async reorderItems(listId: string, itemIds: string[]): Promise<void> {
+    // Start a transaction to ensure all updates are atomic
+    await db.transaction('rw', db.listItems, async () => {
+      // Update each item with its new sort order (1000 increment to allow for future insertions)
+      for (let i = 0; i < itemIds.length; i++) {
+        const itemId = itemIds[i];
+        const sortOrder = (i + 1) * 1000;
+        await this.updateSortOrder(itemId, sortOrder);
+      }
+    });
   }
 }

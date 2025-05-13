@@ -321,6 +321,12 @@ export class LocalShoppingListService implements ShoppingListService {
         return { success: false, error: "Invalid unit" };
       }
 
+      // Get the highest sort order to place the new item at the end
+      const existingItems = await this.itemRepository.findByList(params.listId);
+      const maxSortOrder = existingItems.length > 0
+        ? Math.max(...existingItems.map(item => item.sortOrder || 0))
+        : 0;
+
       // Create the item
       const item: Partial<ListItem> = {
         listId: params.listId,
@@ -328,6 +334,7 @@ export class LocalShoppingListService implements ShoppingListService {
         quantity: params.quantity,
         unit: params.unit,
         isPurchased: false,
+        sortOrder: params.sortOrder !== undefined ? params.sortOrder : maxSortOrder + 1000, // Use large increments to allow for easy reordering
       };
 
       const savedItem = await this.itemRepository.save(item);
@@ -389,6 +396,8 @@ export class LocalShoppingListService implements ShoppingListService {
         updates.isPurchased = params.isPurchased;
       if (params.purchasedAt !== undefined)
         updates.purchasedAt = params.purchasedAt;
+      if (params.sortOrder !== undefined)
+        updates.sortOrder = params.sortOrder;
 
       const updatedItem = await this.itemRepository.update(params.id, updates);
 

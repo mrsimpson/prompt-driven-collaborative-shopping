@@ -79,39 +79,46 @@ This document outlines the step-by-step implementation plan for the collaborativ
   - [x] Improve header components with centered titles
   - [x] Create reusable UI components
 
-- [x] **3.3 Connect UI to Local Storage**
+- [ ] **3.3 Connect UI to Local Storage**
 
   - [x] Create custom hooks for service layer access
   - [x] Implement app initialization flow
   - [x] Wire up list management screens to services
   - [x] Connect shopping mode to services
   - [x] Implement local user management
+  - [ ] Wire up home screen
+  - 
 
-- [ ] **3.4 Add Offline Capabilities**
-  - [ ] Implement local UUID generation
-  - [ ] Add timestamp management for local changes
-  - [ ] Create local notification system for actions
+- [x] **3.4 Add Offline Capabilities**
+  - [x] Implement local UUID generation
+  - [x] Add timestamp management for local changes
+  - [x] Create local notification system for actions
+
+- [ ] **3.5 Basic usability**
+  - [x] Checkout with creation of new lists
+  - [x] Drag and drop re-ordering
+  - [ ] Editing of items
 
 ## Phase 4: State Management
 
 Our application uses a page-oriented architecture with minimal global state. We'll focus on authentication context and use URL parameters for data transfer between screens.
 
-- [ ] **4.1 Implement Authentication Context**
+- [x] **4.1 Implement Authentication Context**
 
   - [x] Create authentication context for user login state
-  - [ ] Add local mode detection and indicators
+  - [x] Add local mode detection and indicators
   - [ ] Implement persistent login sessions
 
-- [ ] **4.2 Optimize Page-to-Page Data Transfer**
+- [x] **4.2 Optimize Page-to-Page Data Transfer**
 
-  - [ ] Standardize URL parameter passing for list IDs
-  - [ ] Implement efficient data loading patterns
-  - [ ] Add loading states for data fetching operations
+  - [x] Standardize URL parameter passing for list IDs
+  - [x] Implement efficient data loading patterns
+  - [x] Add loading states for data fetching operations
 
-- [ ] **4.3 Enhance Local Storage Integration**
-  - [ ] Optimize service calls in page components
-  - [ ] Implement data prefetching for common operations
-  - [ ] Add caching for frequently accessed data
+- [x] **4.3 Enhance Local Storage Integration**
+  - [x] Optimize service calls in page components
+  - [x] Implement data prefetching for common operations
+  - [x] Add caching for frequently accessed data
 
 ## Phase 5: Supabase Integration
 
@@ -174,6 +181,7 @@ Our application uses a page-oriented architecture with minimal global state. We'
   - [ ] Implement item aggregation across lists
   - [ ] Add checkout organization features
   - [ ] Create shopping history view
+  - [ ] Intelligent automated ordering based on item-categories
 
 - [ ] **7.3 Optimize Performance**
   - [ ] Implement lazy loading for lists

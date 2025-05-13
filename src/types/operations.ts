@@ -42,6 +42,7 @@ export interface CreateListItemParams {
   name: string;
   quantity: number;
   unit: string;
+  sortOrder?: number;
 }
 
 /**
@@ -55,6 +56,7 @@ export interface UpdateListItemParams {
   unit?: string;
   isPurchased?: boolean;
   purchasedAt?: Date;
+  sortOrder?: number;
 }
 
 /**

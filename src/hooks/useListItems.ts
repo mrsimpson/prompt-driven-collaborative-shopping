@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { ServiceFactory } from "@/src/services";
 import { ListItem } from "@/src/types/models";
+import { DexieListItemRepository } from "@/src/repositories/list-item-repository";
 
 /**
  * Hook for managing list items for a specific shopping list
@@ -50,6 +51,7 @@ export function useListItems(listId: string) {
           name: item.name || "",
           quantity: item.quantity || 1,
           unit: item.unit || "",
+          sortOrder: item.sortOrder,
         });
 
         if (!result.success) {
@@ -164,6 +166,39 @@ export function useListItems(listId: string) {
     [listId, items, shoppingListService],
   );
 
+  const reorderItems = useCallback(
+    async (itemIds: string[]) => {
+      try {
+        setError(null);
+        
+        // Update local state immediately for better UX
+        const itemsMap = new Map(items.map(item => [item.id, item]));
+        const reorderedItems = itemIds
+          .map(id => itemsMap.get(id))
+          .filter((item): item is ListItem => !!item);
+        
+        setItems(reorderedItems);
+        
+        // Call repository to persist the order
+        const repository = new DexieListItemRepository();
+        await repository.reorderItems(listId, itemIds);
+        
+        // Refresh items to ensure we have the latest data
+        await fetchItems();
+        
+      } catch (err) {
+        setError(
+          err instanceof Error
+            ? err
+            : new Error("Failed to reorder items"),
+        );
+        console.error("Error reordering items:", err);
+        throw err;
+      }
+    },
+    [listId, items, fetchItems],
+  );
+
   return {
     items,
     loading,
@@ -173,5 +208,6 @@ export function useListItems(listId: string) {
     updateItem,
     removeItem,
     markItemAsPurchased,
+    reorderItems,
   };
 }

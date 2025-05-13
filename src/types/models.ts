@@ -80,6 +80,7 @@ export interface ListItem extends BaseEntity {
   isPurchased: boolean;
   purchasedBy?: string; // userId of the person who purchased the item
   purchasedAt?: Date; // When the item was purchased
+  sortOrder: number; // Position in the list for sorting
 }
 
 /**

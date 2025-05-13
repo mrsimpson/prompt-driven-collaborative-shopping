@@ -1,18 +1,23 @@
-import React, { useState } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import {
   View,
   Text,
-  FlatList,
   TouchableOpacity,
   TextInput,
   ActivityIndicator,
   Alert,
+  KeyboardAvoidingView,
+  Platform,
 } from "react-native";
 import { useLocalSearchParams, router } from "expo-router";
-import { Plus, Trash2, ShoppingBag } from "lucide-react-native";
+import { Plus, ShoppingBag } from "lucide-react-native";
 import { HeaderWithBack } from "@/src/components/HeaderWithBack";
 import { layout, colors, buttons, typography } from "@/src/styles/common";
 import { useListItems, useShoppingLists } from "@/src/hooks";
+import { ListItem } from "@/src/types/models";
+import { ShoppingListItem } from "@/src/components/ShoppingListItem";
+import { SortableList } from "@/src/components/SortableList";
+import { SortableItem } from "@/src/components/SortableItem";
 
 const styles = {
   addItemForm: {
@@ -48,26 +53,6 @@ const styles = {
     padding: 12,
     marginLeft: 4,
   },
-  itemDetails: {
-    flex: 1,
-  },
-  itemName: {
-    fontSize: 16,
-    fontWeight: "500",
-    color: colors.black,
-  },
-  itemPurchased: {
-    textDecorationLine: "line-through",
-    color: colors.gray400,
-  },
-  itemQuantity: {
-    fontSize: 14,
-    color: colors.gray500,
-    marginTop: 2,
-  },
-  deleteButton: {
-    padding: 8,
-  },
   footer: {
     position: "absolute",
     bottom: 0,
@@ -101,21 +86,28 @@ const styles = {
     padding: 16,
     paddingBottom: 80, // Extra padding for the footer
   },
-  itemRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: colors.white,
-    padding: 16,
-    borderRadius: 8,
+  sortInstructions: {
+    textAlign: "center",
+    color: colors.gray500,
     marginBottom: 8,
-    borderWidth: 1,
-    borderColor: colors.gray200,
+    fontSize: 12,
+  },
+  listContainer: {
+    flex: 1,
+    padding: 16,
+    paddingBottom: 80, // Extra padding for the footer
+  },
+  emptyState: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
   },
 };
 
 export default function ListDetailScreen() {
-  const { id } = useLocalSearchParams();
-  const listId = Array.isArray(id) ? id[0] : id || "";
+  // Get the list ID from the URL parameters
+  const params = useLocalSearchParams();
+  const listId = typeof params.id === "string" ? params.id : "";
 
   const {
     lists,
@@ -127,14 +119,23 @@ export default function ListDetailScreen() {
     loading: itemsLoading,
     error: itemsError,
     addItem,
+    updateItem,
     removeItem,
-    refreshItems,
+    reorderItems,
   } = useListItems(listId);
 
   const [newItemName, setNewItemName] = useState("");
   const [newItemQuantity, setNewItemQuantity] = useState("1");
   const [newItemUnit, setNewItemUnit] = useState("");
   const [isAddingItem, setIsAddingItem] = useState(false);
+  const [localItems, setLocalItems] = useState<ListItem[]>([]);
+
+  const nameInputRef = useRef<TextInput>(null);
+
+  // Update local items when items from the hook change
+  useEffect(() => {
+    setLocalItems([...items]);
+  }, [items]);
 
   // Find the current list from our lists
   const currentList = lists.find((list) => list.id === listId);
@@ -175,11 +176,12 @@ export default function ListDetailScreen() {
       setIsAddingItem(true);
 
       const quantity = parseInt(newItemQuantity, 10) || 1;
+      const unit = newItemUnit.trim() || "pc";
 
       await addItem({
         name: newItemName,
         quantity,
-        unit: newItemUnit,
+        unit,
         isPurchased: false,
         listId,
       });
@@ -188,12 +190,31 @@ export default function ListDetailScreen() {
       setNewItemName("");
       setNewItemQuantity("1");
       setNewItemUnit("");
+
+      // Focus back on the name input for quick entry of multiple items
+      nameInputRef.current?.focus();
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : "Failed to add item";
       Alert.alert("Error", errorMessage);
     } finally {
       setIsAddingItem(false);
+    }
+  };
+
+  const handleUpdateItem = async (
+    itemId: string,
+    updates: Partial<ListItem>,
+  ) => {
+    try {
+      // Log the updates to verify they're correct
+      console.log("Updating item:", itemId, updates);
+
+      await updateItem(itemId, updates);
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : "Failed to update item";
+      Alert.alert("Error", errorMessage);
     }
   };
 
@@ -207,6 +228,40 @@ export default function ListDetailScreen() {
     }
   };
 
+  const handleReorderItems = async (newItems: ListItem[]) => {
+    setLocalItems(newItems);
+
+    // Persist the new order
+    const newOrder = newItems.map((item) => item.id);
+    try {
+      await reorderItems(newOrder);
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : "Failed to reorder items";
+      Alert.alert("Error", errorMessage);
+
+      // Revert to original order on error
+      setLocalItems([...items]);
+    }
+  };
+
+  const renderSortableItem = (
+    item: ListItem,
+    index: number,
+    isDragging: boolean,
+  ) => {
+    return (
+      <SortableItem id={item.id}>
+        <ShoppingListItem
+          item={item}
+          onUpdate={handleUpdateItem}
+          onDelete={handleDeleteItem}
+          isDragging={isDragging}
+        />
+      </SortableItem>
+    );
+  };
+
   const startShoppingWithThisList = () => {
     router.push({
       pathname: "/shopping/session",
@@ -215,7 +270,11 @@ export default function ListDetailScreen() {
   };
 
   return (
-    <View style={layout.container}>
+    <KeyboardAvoidingView
+      style={layout.container}
+      behavior={Platform.OS === "ios" ? "padding" : undefined}
+      keyboardVerticalOffset={Platform.OS === "ios" ? 100 : 0}
+    >
       <HeaderWithBack
         title={currentList.name}
         backTo="/lists"
@@ -224,11 +283,14 @@ export default function ListDetailScreen() {
 
       <View style={styles.addItemForm}>
         <TextInput
+          ref={nameInputRef}
           style={styles.itemNameInput}
           value={newItemName}
           onChangeText={setNewItemName}
           placeholder="Add new item..."
           editable={!isAddingItem}
+          onSubmitEditing={handleAddItem}
+          returnKeyType="done"
         />
         <View style={styles.quantityContainer}>
           <TextInput
@@ -242,7 +304,7 @@ export default function ListDetailScreen() {
             style={styles.unitInput}
             value={newItemUnit}
             onChangeText={setNewItemUnit}
-            placeholder="unit"
+            placeholder="pc"
             editable={!isAddingItem}
           />
         </View>
@@ -259,38 +321,27 @@ export default function ListDetailScreen() {
         </TouchableOpacity>
       </View>
 
-      {items.length === 0 ? (
-        <View style={[layout.centered, { flex: 1 }]}>
+      {localItems.length === 0 ? (
+        <View style={styles.emptyState}>
           <Text style={typography.body}>This list is empty.</Text>
           <Text style={[typography.bodySmall, { marginTop: 8 }]}>
             Add items using the form above.
           </Text>
         </View>
       ) : (
-        <FlatList
-          data={items}
-          keyExtractor={(item) => item.id}
-          renderItem={({ item }) => (
-            <View style={styles.itemRow}>
-              <View style={styles.itemDetails}>
-                <Text style={styles.itemName}>{item.name}</Text>
-                <Text style={styles.itemQuantity}>
-                  {item.quantity} {item.unit}
-                </Text>
-              </View>
+        <View style={styles.listContainer}>
+          <Text style={styles.sortInstructions}>
+            Drag items by the grip handle to reorder
+          </Text>
 
-              <TouchableOpacity
-                style={styles.deleteButton}
-                onPress={() => handleDeleteItem(item.id)}
-              >
-                <Trash2 size={18} color={colors.danger} />
-              </TouchableOpacity>
-            </View>
-          )}
-          contentContainerStyle={styles.listContent}
-          refreshing={itemsLoading}
-          onRefresh={refreshItems}
-        />
+          <SortableList
+            items={localItems}
+            renderItem={renderSortableItem}
+            keyExtractor={(item) => item.id}
+            onReorder={handleReorderItems}
+            contentContainerStyle={styles.listContent}
+          />
+        </View>
       )}
 
       <View style={styles.footer}>
@@ -308,6 +359,6 @@ export default function ListDetailScreen() {
           </View>
         </TouchableOpacity>
       </View>
-    </View>
+    </KeyboardAvoidingView>
   );
 }
