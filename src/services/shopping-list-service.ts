@@ -385,8 +385,10 @@ export class LocalShoppingListService implements ShoppingListService {
       if (params.name !== undefined) updates.name = params.name;
       if (params.quantity !== undefined) updates.quantity = params.quantity;
       if (params.unit !== undefined) updates.unit = params.unit;
-      if (params.isPurchased !== undefined) updates.isPurchased = params.isPurchased;
-      if (params.purchasedAt !== undefined) updates.purchasedAt = params.purchasedAt;
+      if (params.isPurchased !== undefined)
+        updates.isPurchased = params.isPurchased;
+      if (params.purchasedAt !== undefined)
+        updates.purchasedAt = params.purchasedAt;
 
       const updatedItem = await this.itemRepository.update(params.id, updates);
 

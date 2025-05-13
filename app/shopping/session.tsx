@@ -1,23 +1,32 @@
-import React, { useState, useEffect, useMemo } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, Alert, ActivityIndicator } from 'react-native';
-import { router, useLocalSearchParams, useNavigation } from 'expo-router';
-import { Check, ShoppingBag } from 'lucide-react-native';
-import { HeaderWithBack } from '@/src/components/HeaderWithBack';
-import { colors, layout, typography, buttons } from '@/src/styles/common';
-import { useShoppingSession } from '@/src/hooks';
+import React, { useState, useEffect, useMemo } from "react";
+import {
+  View,
+  Text,
+  StyleSheet,
+  FlatList,
+  TouchableOpacity,
+  ActivityIndicator,
+} from "react-native";
+import { router, useLocalSearchParams, useNavigation } from "expo-router";
+import { Check, ShoppingBag } from "lucide-react-native";
+import { HeaderWithBack } from "@/src/components/HeaderWithBack";
+import { colors, layout, typography, buttons } from "@/src/styles/common";
+import { useShoppingSession } from "@/src/hooks";
+import { ShoppingSessionStatus } from "@/src/types/models";
+import { CrossPlatformAlert } from "@/src/components/CrossPlatformAlert";
 
 export default function ShoppingSessionScreen() {
   const params = useLocalSearchParams();
   const navigation = useNavigation();
-  
+
   // Use useMemo to prevent the listIds array from being recreated on every render
   const listIds = useMemo(() => {
-    return params.listIds ? String(params.listIds).split(',') : [];
+    return params.listIds ? String(params.listIds).split(",") : [];
   }, [params.listIds]);
-  
+
   const [isCheckoutMode, setIsCheckoutMode] = useState(false);
-  
-  const { 
+
+  const {
     session,
     lists,
     items,
@@ -26,23 +35,23 @@ export default function ShoppingSessionScreen() {
     createSession,
     markItemAsPurchased,
     endSession,
-    getItemsGroupedByList
+    cancelSession,
   } = useShoppingSession();
-  
+
   // Create a new shopping session when the component mounts
   useEffect(() => {
     if (listIds.length > 0 && !session) {
-      createSession(listIds).catch(err => {
-        console.error('Failed to create shopping session:', err);
-        Alert.alert(
-          'Error',
-          'Failed to create shopping session. Please try again.',
+      createSession(listIds).catch((err) => {
+        console.error("Failed to create shopping session:", err);
+        CrossPlatformAlert.show(
+          "Error",
+          "Failed to create shopping session. Please try again.",
           [
-            { 
-              text: 'Go Back', 
-              onPress: () => router.back() 
-            }
-          ]
+            {
+              text: "Go Back",
+              onPress: () => router.back(),
+            },
+          ],
         );
       });
     }
@@ -53,131 +62,168 @@ export default function ShoppingSessionScreen() {
     // This function will be called when the screen is about to be unfocused/navigated away from
     const endSessionOnLeave = () => {
       if (session) {
-        console.log('Ending shopping session due to navigation away');
-        endSession(true).catch(error => {
-          console.error('Failed to end shopping session on navigation:', error);
+        console.log("Canceling shopping session due to navigation away");
+        cancelSession().catch((error) => {
+          console.error(
+            "Failed to cancel shopping session on navigation:",
+            error,
+          );
         });
       }
     };
 
     // Add the listener for navigation events
-    const unsubscribe = navigation.addListener('beforeRemove', endSessionOnLeave);
+    const unsubscribe = navigation.addListener(
+      "beforeRemove",
+      endSessionOnLeave,
+    );
 
     // Clean up the listener when the component unmounts
     return unsubscribe;
-  }, [session, endSession, navigation]);
-  
+  }, [session, cancelSession, navigation]);
+
   // Handle loading state
   if (loading) {
     return (
       <View style={[layout.container, layout.centered]}>
         <ActivityIndicator size="large" color={colors.primary} />
         <Text style={[typography.body, { marginTop: 16 }]}>
-          {session ? 'Loading shopping items...' : 'Creating shopping session...'}
+          {session
+            ? "Loading shopping items..."
+            : "Creating shopping session..."}
         </Text>
       </View>
     );
   }
-  
+
   // Handle error state
   if (error) {
     return (
       <View style={[layout.container, layout.centered]}>
-        <Text style={[typography.body, { color: colors.danger, marginBottom: 16 }]}>
-          {error.message || 'An error occurred during shopping'}
+        <Text
+          style={[typography.body, { color: colors.danger, marginBottom: 16 }]}
+        >
+          {error.message || "An error occurred during shopping"}
         </Text>
-        <TouchableOpacity 
+        <TouchableOpacity
           style={buttons.secondary}
-          onPress={() => router.replace('/lists')}
+          onPress={() => router.replace("/lists")}
         >
           <Text style={typography.buttonTextSecondary}>Back to Lists</Text>
         </TouchableOpacity>
       </View>
     );
   }
-  
+
   // Handle case where no lists were selected
   if (listIds.length === 0) {
     return (
       <View style={[layout.container, layout.centered]}>
         <Text style={typography.body}>No shopping lists selected</Text>
-        <TouchableOpacity 
+        <TouchableOpacity
           style={[buttons.primary, { marginTop: 16 }]}
-          onPress={() => router.replace('/shopping')}
+          onPress={() => router.replace("/shopping")}
         >
           <Text style={typography.buttonText}>Select Lists</Text>
         </TouchableOpacity>
       </View>
     );
   }
-  
-  const handleToggleItemPurchased = async (itemId: string, currentStatus: boolean) => {
+
+  const handleToggleItemPurchased = async (
+    itemId: string,
+    currentStatus: boolean,
+  ) => {
     try {
       await markItemAsPurchased(itemId, !currentStatus);
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Failed to update item';
-      Alert.alert('Error', errorMessage);
+      const errorMessage =
+        error instanceof Error ? error.message : "Failed to update item";
+      CrossPlatformAlert.show("Error", errorMessage);
     }
   };
-  
+
   const handleGoToCheckout = () => {
-    if (!items.some(item => item.isPurchased)) {
-      Alert.alert('No Items Purchased', 'You need to purchase at least one item to proceed to checkout.');
+    if (!items.some((item) => item.isPurchased)) {
+      CrossPlatformAlert.show(
+        "No Items Purchased",
+        "You need to purchase at least one item to proceed to checkout.",
+      );
       return;
     }
     setIsCheckoutMode(true);
   };
-  
+
   const handleEndShopping = () => {
-    Alert.alert(
-      'End Shopping Session',
-      'Are you sure you want to end this shopping session?',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        { 
-          text: 'End Session', 
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              await endSession(true);
-              router.replace('/');
-            } catch (error) {
-              const errorMessage = error instanceof Error ? error.message : 'Failed to end shopping session';
-              Alert.alert('Error', errorMessage);
-            }
-          }
-        }
-      ]
+    if (!session || !lists || lists.length === 0) {
+      console.error("No active session or lists to end");
+      return;
+    }
+
+    // Get the first list to use its name and description for the new list
+    const sourceList = lists[0];
+    const newListName = `${sourceList.name}`;
+    const newListDescription = `${sourceList.description}`;
+
+    console.log("Showing end shopping confirmation...");
+
+    // Use our cross-platform alert
+    CrossPlatformAlert.destructiveConfirm(
+      "End Shopping Session",
+      "Are you sure you want to end this shopping session?",
+      "End Session",
+      () => {
+        handleConfirmEndShopping(newListName, newListDescription);
+      },
     );
   };
-  
-  // Group items by source list for checkout mode
-  const groupedItems = isCheckoutMode ? getItemsGroupedByList() : {};
-  const sourceListNames = Object.keys(groupedItems);
-  
+
+  const handleConfirmEndShopping = (
+    newListName: string,
+    newListDescription: string,
+  ) => {
+    if (!session) return;
+
+    console.log("Ending shopping session...");
+    endSession({
+      sessionId: session.id,
+      status: ShoppingSessionStatus.COMPLETED,
+      createNewListForUnpurchased: true,
+      newListName: newListName,
+      newListDescription: newListDescription,
+    })
+      .then(() => {
+        router.replace("/");
+      })
+      .catch((error) => {
+        console.error("Failed to end shopping session:", error);
+      });
+  };
+
+  // Checkout mode
   if (isCheckoutMode) {
     return (
       <View style={styles.container}>
-        <HeaderWithBack 
+        <HeaderWithBack
           title="Checkout"
           onBack={() => setIsCheckoutMode(false)}
           backTitle="Shopping"
         />
-        
+
         <FlatList
           data={lists}
           keyExtractor={(list) => list.id}
           renderItem={({ item: list }) => {
             const listItems = items.filter(
-              item => item.listId === list.id && item.isPurchased
+              (item) => item.listId === list.id && item.isPurchased,
             );
-            
+
             if (listItems.length === 0) return null;
-            
+
             return (
               <View style={styles.listSection}>
                 <Text style={styles.listTitle}>{list.name}</Text>
-                {listItems.map(item => (
+                {listItems.map((item) => (
                   <View key={item.id} style={styles.checkoutItem}>
                     <Text style={styles.checkoutItemName}>{item.name}</Text>
                     <Text style={styles.checkoutItemQuantity}>
@@ -190,25 +236,28 @@ export default function ShoppingSessionScreen() {
           }}
           contentContainerStyle={styles.listContent}
         />
-        
-        <TouchableOpacity 
+
+        <TouchableOpacity
           style={styles.endButton}
-          onPress={handleEndShopping}
+          onPress={() => {
+            console.log("End button pressed");
+            handleEndShopping();
+          }}
         >
           <Text style={styles.endButtonText}>End Shopping Session</Text>
         </TouchableOpacity>
       </View>
     );
   }
-  
+
   return (
     <View style={styles.container}>
-      <HeaderWithBack 
+      <HeaderWithBack
         title="Shopping"
         backTo={listIds.length > 0 ? `/lists/${listIds[0]}` : "/shopping"}
         backTitle={listIds.length > 0 ? "Back to List" : "Select Lists"}
       />
-      
+
       <FlatList
         data={items}
         keyExtractor={(item) => {
@@ -221,42 +270,49 @@ export default function ShoppingSessionScreen() {
         }}
         renderItem={({ item }) => {
           // Find the source list for this item
-          const sourceList = lists.find(list => list.id === item.listId);
-          
+          const sourceList = lists.find((list) => list.id === item.listId);
+
           return (
-            <TouchableOpacity 
+            <TouchableOpacity
               style={[
                 styles.itemRow,
-                item.isPurchased && styles.itemRowPurchased
+                item.isPurchased && styles.itemRowPurchased,
               ]}
               onPress={() => {
                 // Make sure the item has an ID before trying to toggle its status
                 if (!item.id) {
-                  Alert.alert('Error', 'Cannot update this item because it has no ID');
+                  CrossPlatformAlert.show(
+                    "Error",
+                    "Cannot update this item because it has no ID",
+                  );
                   return;
                 }
                 handleToggleItemPurchased(item.id, !!item.isPurchased);
               }}
             >
-              <View style={[
-                styles.checkbox,
-                item.isPurchased && styles.checkboxChecked
-              ]}>
+              <View
+                style={[
+                  styles.checkbox,
+                  item.isPurchased && styles.checkboxChecked,
+                ]}
+              >
                 {item.isPurchased && <Check size={16} color="#FFFFFF" />}
               </View>
-              
+
               <View style={styles.itemDetails}>
-                <Text style={[
-                  styles.itemName,
-                  item.isPurchased && styles.itemPurchased
-                ]}>
+                <Text
+                  style={[
+                    styles.itemName,
+                    item.isPurchased && styles.itemPurchased,
+                  ]}
+                >
                   {item.name}
                 </Text>
                 <Text style={styles.itemQuantity}>
                   {item.quantity} {item.unit}
                 </Text>
                 <Text style={styles.itemSource}>
-                  From: {sourceList?.name || 'Unknown List'}
+                  From: {sourceList?.name || "Unknown List"}
                 </Text>
               </View>
             </TouchableOpacity>
@@ -264,9 +320,9 @@ export default function ShoppingSessionScreen() {
         }}
         contentContainerStyle={styles.listContent}
       />
-      
+
       <View style={styles.footer}>
-        <TouchableOpacity 
+        <TouchableOpacity
           style={styles.checkoutButton}
           onPress={handleGoToCheckout}
         >
@@ -290,8 +346,8 @@ const styles = StyleSheet.create({
     paddingBottom: 80, // Extra padding for the footer
   },
   itemRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     backgroundColor: colors.white,
     padding: 16,
     borderRadius: 8,
@@ -308,8 +364,8 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     borderWidth: 2,
     borderColor: colors.primary,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     marginRight: 12,
   },
   checkboxChecked: {
@@ -320,11 +376,11 @@ const styles = StyleSheet.create({
   },
   itemName: {
     fontSize: 16,
-    fontWeight: '500',
+    fontWeight: "500",
     color: colors.black,
   },
   itemPurchased: {
-    textDecorationLine: 'line-through',
+    textDecorationLine: "line-through",
     color: colors.gray400,
   },
   itemQuantity: {
@@ -338,7 +394,7 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   footer: {
-    position: 'absolute',
+    position: "absolute",
     bottom: 0,
     left: 0,
     right: 0,
@@ -353,9 +409,9 @@ const styles = StyleSheet.create({
     padding: 16,
   },
   buttonContainer: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
   },
   buttonIcon: {
     marginRight: 8,
@@ -363,14 +419,14 @@ const styles = StyleSheet.create({
   checkoutButtonText: {
     color: colors.white,
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: "600",
   },
   listSection: {
     marginBottom: 24,
   },
   listTitle: {
     fontSize: 18,
-    fontWeight: '600',
+    fontWeight: "600",
     color: colors.black,
     marginBottom: 12,
     backgroundColor: colors.gray200,
@@ -384,8 +440,8 @@ const styles = StyleSheet.create({
     marginBottom: 8,
     borderWidth: 1,
     borderColor: colors.gray200,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    justifyContent: "space-between",
   },
   checkoutItemName: {
     fontSize: 16,
@@ -400,11 +456,11 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     padding: 16,
     margin: 16,
-    alignItems: 'center',
+    alignItems: "center",
   },
   endButtonText: {
     color: colors.white,
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: "600",
   },
 });
