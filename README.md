@@ -195,27 +195,32 @@ shopping-companion-app/
 The project follows a clear separation of concerns:
 
 ### UI Layer
+
 - **app/**: Contains all Expo Router screens and navigation
 - **src/components/**: Reusable UI components
 - **src/hooks/**: Custom React hooks for UI logic
 
 ### Business Logic Layer
+
 - **src/services/**: Service interfaces and implementations
 - **src/repositories/**: Data access interfaces and implementations
 - **src/types/**: Domain models and operation types
 
 ### Data Layer
+
 - **src/stores/**: Dexie.js database definition
 - **supabase/**: Backend configuration and migrations
 
 ## Data Flow
 
 1. **Page-to-Page Navigation**:
+
    - List IDs are passed as URL parameters: `/lists/[id]`
    - Multiple list IDs can be passed as query parameters: `/shopping/session?listIds=1,2,3`
    - Each page fetches its own data using the service layer
 
 2. **Authentication State**:
+
    - Managed through AuthContext
    - Provides login state and local mode detection across the app
    - Used by the LocalModeHeader component to show the local mode banner

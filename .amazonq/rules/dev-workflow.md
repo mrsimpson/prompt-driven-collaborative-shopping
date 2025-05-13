@@ -3,4 +3,4 @@
   - The target architecture is documented in docs/arc42.md
 - After each change in the code, lint the code (by running npm run lint in the bash)
 - After each major change in the code, run the automated tests (by running npm run test in the bash)
-- after you implemented something, adapt the implementation plan and check the boxes. Don't change anything except the progress ou've been working on unless explicitly requested 
+- after you implemented something, adapt the implementation plan and check the boxes. Don't change anything except the progress ou've been working on unless explicitly requested

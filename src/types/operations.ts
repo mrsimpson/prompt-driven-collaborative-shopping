@@ -89,6 +89,7 @@ export interface EndShoppingSessionParams {
   status: ShoppingSessionStatus;
   createNewListForUnpurchased?: boolean;
   newListName?: string;
+  newListDescription?: string;
 }
 
 /**

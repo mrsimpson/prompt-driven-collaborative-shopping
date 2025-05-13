@@ -1,19 +1,39 @@
-import React from 'react';
-import { View, Text, FlatList, TouchableOpacity, ActivityIndicator } from 'react-native';
-import { Link } from 'expo-router';
-import { Plus } from 'lucide-react-native';
-import { layout, lists, typography, buttons, colors, headers } from '@/src/styles/common';
-import { useShoppingLists } from '@/src/hooks';
+import React from "react";
+import {
+  View,
+  Text,
+  FlatList,
+  TouchableOpacity,
+  ActivityIndicator,
+} from "react-native";
+import { Link } from "expo-router";
+import { Plus } from "lucide-react-native";
+import {
+  layout,
+  lists,
+  typography,
+  buttons,
+  colors,
+  headers,
+} from "@/src/styles/common";
+import { useShoppingLists } from "@/src/hooks";
 
 export default function ListsScreen() {
-  const { lists: shoppingLists, loading, error, refreshLists } = useShoppingLists();
+  const {
+    lists: shoppingLists,
+    loading,
+    error,
+    refreshLists,
+  } = useShoppingLists();
 
   // Render loading state
   if (loading) {
     return (
       <View style={[layout.container, layout.centered]}>
         <ActivityIndicator size="large" color={colors.primary} />
-        <Text style={[typography.body, { marginTop: 16 }]}>Loading your lists...</Text>
+        <Text style={[typography.body, { marginTop: 16 }]}>
+          Loading your lists...
+        </Text>
       </View>
     );
   }
@@ -25,8 +45,8 @@ export default function ListsScreen() {
         <Text style={[typography.body, { color: colors.danger }]}>
           Failed to load shopping lists
         </Text>
-        <TouchableOpacity 
-          style={[buttons.secondary, { marginTop: 16 }]} 
+        <TouchableOpacity
+          style={[buttons.secondary, { marginTop: 16 }]}
           onPress={refreshLists}
         >
           <Text style={typography.buttonTextSecondary}>Try Again</Text>
@@ -50,7 +70,9 @@ export default function ListsScreen() {
 
       {shoppingLists.length === 0 ? (
         <View style={[layout.centered, { flex: 1 }]}>
-          <Text style={typography.body}>You don&apos;t have any shopping lists yet.</Text>
+          <Text style={typography.body}>
+            You don&apos;t have any shopping lists yet.
+          </Text>
           <Link href="/lists/new" asChild>
             <TouchableOpacity style={[buttons.primary, { marginTop: 16 }]}>
               <Text style={typography.buttonText}>Create Your First List</Text>
@@ -67,7 +89,7 @@ export default function ListsScreen() {
                 <View>
                   <Text style={typography.body}>{item.name}</Text>
                   <Text style={typography.bodySmall}>
-                    {item.description ? item.description : 'No description'}
+                    {item.description ? item.description : "No description"}
                   </Text>
                 </View>
               </TouchableOpacity>

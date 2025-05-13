@@ -1,80 +1,101 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, TextInput, ActivityIndicator, Alert } from 'react-native';
-import { layout, typography, colors, buttons, forms } from '@/src/styles/common';
-import { useAuth } from '@/src/contexts/AuthContext';
-import { useUser } from '@/src/hooks';
+import React, { useState } from "react";
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  TextInput,
+  ActivityIndicator,
+  Alert,
+} from "react-native";
+import {
+  layout,
+  typography,
+  colors,
+  buttons,
+  forms,
+} from "@/src/styles/common";
+import { useAuth } from "@/src/contexts/AuthContext";
+import { useUser } from "@/src/hooks";
 
 export default function ProfileScreen() {
-  const { isAuthenticated, isLocalMode, login, logout } = useAuth();
+  const { isLocalMode, login, logout } = useAuth();
   const { user, loading, error, updateProfile } = useUser();
-  
+
   const [isEditing, setIsEditing] = useState(false);
-  const [username, setUsername] = useState(user?.username || '');
-  const [email, setEmail] = useState(user?.email || '');
+  const [username, setUsername] = useState(user?.username || "");
+  const [email, setEmail] = useState(user?.email || "");
   const [isSubmitting, setIsSubmitting] = useState(false);
-  
+
   // For login form
-  const [loginEmail, setLoginEmail] = useState('');
-  const [loginPassword, setLoginPassword] = useState('');
+  const [loginEmail, setLoginEmail] = useState("");
+  const [loginPassword, setLoginPassword] = useState("");
   const [isLoggingIn, setIsLoggingIn] = useState(false);
-  
+
   const handleUpdateProfile = async () => {
     if (!user) return;
-    
+
     try {
       setIsSubmitting(true);
       await updateProfile({
         username,
-        email
+        email,
       });
       setIsEditing(false);
-      Alert.alert('Success', 'Profile updated successfully');
+      Alert.alert("Success", "Profile updated successfully");
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Failed to update profile';
-      Alert.alert('Error', errorMessage);
+      const errorMessage =
+        error instanceof Error ? error.message : "Failed to update profile";
+      Alert.alert("Error", errorMessage);
     } finally {
       setIsSubmitting(false);
     }
   };
-  
+
   const handleLogin = async () => {
     try {
       setIsLoggingIn(true);
       await login(loginEmail, loginPassword);
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Failed to log in';
-      Alert.alert('Error', errorMessage);
+      const errorMessage =
+        error instanceof Error ? error.message : "Failed to log in";
+      Alert.alert("Error", errorMessage);
     } finally {
       setIsLoggingIn(false);
     }
   };
-  
+
   const handleLogout = async () => {
     try {
       await logout();
-      Alert.alert('Success', 'Logged out successfully');
+      Alert.alert("Success", "Logged out successfully");
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Failed to log out';
-      Alert.alert('Error', errorMessage);
+      const errorMessage =
+        error instanceof Error ? error.message : "Failed to log out";
+      Alert.alert("Error", errorMessage);
     }
   };
-  
+
   if (loading) {
     return (
       <View style={[layout.container, layout.centered]}>
         <ActivityIndicator size="large" color={colors.primary} />
-        <Text style={[typography.body, { marginTop: 16 }]}>Loading profile...</Text>
+        <Text style={[typography.body, { marginTop: 16 }]}>
+          Loading profile...
+        </Text>
       </View>
     );
   }
-  
+
   if (error) {
     return (
       <View style={[layout.container, layout.centered]}>
-        <Text style={[typography.body, { color: colors.danger, marginBottom: 16 }]}>
-          {error.message || 'Failed to load profile'}
+        <Text
+          style={[typography.body, { color: colors.danger, marginBottom: 16 }]}
+        >
+          {error.message || "Failed to load profile"}
         </Text>
-        <TouchableOpacity 
+        <TouchableOpacity
           style={buttons.secondary}
           onPress={() => window.location.reload()}
         >
@@ -83,7 +104,7 @@ export default function ProfileScreen() {
       </View>
     );
   }
-  
+
   return (
     <View style={layout.container}>
       <View style={styles.header}>
@@ -94,7 +115,7 @@ export default function ProfileScreen() {
           </View>
         )}
       </View>
-      
+
       {user ? (
         <View style={styles.profileContainer}>
           {isEditing ? (
@@ -108,7 +129,7 @@ export default function ProfileScreen() {
                 placeholder="Enter username"
                 editable={!isSubmitting}
               />
-              
+
               <Text style={forms.label}>Email</Text>
               <TextInput
                 style={forms.input}
@@ -118,18 +139,22 @@ export default function ProfileScreen() {
                 keyboardType="email-address"
                 editable={!isSubmitting}
               />
-              
+
               <View style={styles.buttonRow}>
-                <TouchableOpacity 
+                <TouchableOpacity
                   style={[buttons.secondary, styles.buttonHalf]}
                   onPress={() => setIsEditing(false)}
                   disabled={isSubmitting}
                 >
                   <Text style={typography.buttonTextSecondary}>Cancel</Text>
                 </TouchableOpacity>
-                
-                <TouchableOpacity 
-                  style={[buttons.primary, styles.buttonHalf, isSubmitting && buttons.primaryDisabled]}
+
+                <TouchableOpacity
+                  style={[
+                    buttons.primary,
+                    styles.buttonHalf,
+                    isSubmitting && buttons.primaryDisabled,
+                  ]}
                   onPress={handleUpdateProfile}
                   disabled={isSubmitting}
                 >
@@ -148,21 +173,23 @@ export default function ProfileScreen() {
                 <Text style={styles.fieldLabel}>Username</Text>
                 <Text style={styles.fieldValue}>{user.username}</Text>
               </View>
-              
+
               <View style={styles.profileField}>
                 <Text style={styles.fieldLabel}>Email</Text>
                 <Text style={styles.fieldValue}>{user.email}</Text>
               </View>
-              
+
               <View style={styles.buttonRow}>
-                <TouchableOpacity 
+                <TouchableOpacity
                   style={[buttons.secondary, styles.buttonHalf]}
                   onPress={() => setIsEditing(true)}
                 >
-                  <Text style={typography.buttonTextSecondary}>Edit Profile</Text>
+                  <Text style={typography.buttonTextSecondary}>
+                    Edit Profile
+                  </Text>
                 </TouchableOpacity>
-                
-                <TouchableOpacity 
+
+                <TouchableOpacity
                   style={[buttons.danger, styles.buttonHalf]}
                   onPress={handleLogout}
                 >
@@ -176,7 +203,7 @@ export default function ProfileScreen() {
         // Login form
         <View style={styles.loginContainer}>
           <Text style={typography.subtitle}>Login to Your Account</Text>
-          
+
           <Text style={forms.label}>Email</Text>
           <TextInput
             style={forms.input}
@@ -186,7 +213,7 @@ export default function ProfileScreen() {
             keyboardType="email-address"
             editable={!isLoggingIn}
           />
-          
+
           <Text style={forms.label}>Password</Text>
           <TextInput
             style={forms.input}
@@ -196,12 +223,12 @@ export default function ProfileScreen() {
             secureTextEntry
             editable={!isLoggingIn}
           />
-          
-          <TouchableOpacity 
+
+          <TouchableOpacity
             style={[
-              buttons.primary, 
+              buttons.primary,
               { marginTop: 16 },
-              isLoggingIn && buttons.primaryDisabled
+              isLoggingIn && buttons.primaryDisabled,
             ]}
             onPress={handleLogin}
             disabled={isLoggingIn || !loginEmail || !loginPassword}
@@ -212,9 +239,10 @@ export default function ProfileScreen() {
               <Text style={typography.buttonText}>Login</Text>
             )}
           </TouchableOpacity>
-          
+
           <Text style={styles.localModeInfo}>
-            You are currently in local mode. All data is stored only on your device.
+            You are currently in local mode. All data is stored only on your
+            device.
           </Text>
         </View>
       )}
@@ -224,9 +252,9 @@ export default function ProfileScreen() {
 
 const styles = StyleSheet.create({
   header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     padding: 16,
     borderBottomWidth: 1,
     borderBottomColor: colors.gray200,
@@ -239,7 +267,7 @@ const styles = StyleSheet.create({
   },
   localModeText: {
     color: colors.primaryDark,
-    fontWeight: '600',
+    fontWeight: "600",
     fontSize: 12,
   },
   profileContainer: {
@@ -258,8 +286,8 @@ const styles = StyleSheet.create({
     color: colors.black,
   },
   buttonRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    justifyContent: "space-between",
     marginTop: 24,
   },
   buttonHalf: {
@@ -273,7 +301,7 @@ const styles = StyleSheet.create({
   },
   localModeInfo: {
     marginTop: 24,
-    textAlign: 'center',
+    textAlign: "center",
     color: colors.gray500,
     fontSize: 14,
   },

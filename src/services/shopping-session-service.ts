@@ -21,6 +21,7 @@ import {
   DexieListItemRepository,
 } from "../repositories/list-item-repository";
 import { generateUUID } from "../utils/uuid";
+import { db } from "../stores/database";
 
 /**
  * Service interface for shopping session operations
@@ -72,15 +73,17 @@ export class LocalShoppingSessionService implements ShoppingSessionService {
       const existingSession = await this.sessionRepository.findActiveByUser(
         params.userId,
       );
-      
+
       // If there's an existing session, end it first
       if (existingSession) {
-        console.log(`Ending existing session ${existingSession.id} before creating a new one`);
-        
+        console.log(
+          `Ending existing session ${existingSession.id} before creating a new one`,
+        );
+
         // End the existing session
         await this.endSession({
           sessionId: existingSession.id,
-          createNewListForUnpurchased: true
+          createNewListForUnpurchased: true,
         });
       }
 
@@ -292,12 +295,12 @@ export class LocalShoppingSessionService implements ShoppingSessionService {
 
       // Create a new list for unpurchased items if requested
       let newListId: string | undefined;
-      if (params.createNewListForUnpurchased && params.newListName) {
+      if (params.createNewListForUnpurchased) {
         // Create a new list
         const now = new Date();
         const newList: Partial<ShoppingList> = {
-          name: params.newListName,
-          description: "Unpurchased items from previous shopping session",
+          name: params.newListName || "Unpurchased Items",
+          description: params.newListDescription,
           createdBy: session.userId,
           isShared: false,
           isLocked: false,
@@ -309,9 +312,20 @@ export class LocalShoppingSessionService implements ShoppingSessionService {
         // Make the user an owner of the new list
         await this.addListOwner(newListId, session.userId);
 
-        // Move unpurchased items to the new list
+        // Move unpurchased items to the new list and soft delete the original lists
         for (const listId of listIds) {
           const items = await this.itemRepository.findByList(listId);
+          let hasUnpurchasedItems = false;
+
+          // First pass: check if there are any unpurchased items
+          for (const item of items) {
+            if (!item.isPurchased) {
+              hasUnpurchasedItems = true;
+              break;
+            }
+          }
+
+          // Second pass: move unpurchased items
           for (const item of items) {
             if (!item.isPurchased) {
               // Create a copy of the item in the new list
@@ -327,6 +341,14 @@ export class LocalShoppingSessionService implements ShoppingSessionService {
               // Soft delete the original item
               await this.itemRepository.softDelete(item.id);
             }
+          }
+
+          // If this list had unpurchased items, soft delete it
+          if (hasUnpurchasedItems) {
+            console.log(
+              `Soft deleting list ${listId} because it had unpurchased items`,
+            );
+            await this.listRepository.softDelete(listId);
           }
         }
       }

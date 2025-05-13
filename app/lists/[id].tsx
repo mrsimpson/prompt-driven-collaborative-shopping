@@ -1,14 +1,22 @@
-import React, { useState } from 'react';
-import { View, Text, FlatList, TouchableOpacity, TextInput, ActivityIndicator, Alert } from 'react-native';
-import { useLocalSearchParams, router } from 'expo-router';
-import { Plus, Check, Trash2, ShoppingBag } from 'lucide-react-native';
-import { HeaderWithBack } from '@/src/components/HeaderWithBack';
-import { layout, lists, checkboxes, colors, buttons, typography } from '@/src/styles/common';
-import { useListItems, useShoppingLists } from '@/src/hooks';
+import React, { useState } from "react";
+import {
+  View,
+  Text,
+  FlatList,
+  TouchableOpacity,
+  TextInput,
+  ActivityIndicator,
+  Alert,
+} from "react-native";
+import { useLocalSearchParams, router } from "expo-router";
+import { Plus, Trash2, ShoppingBag } from "lucide-react-native";
+import { HeaderWithBack } from "@/src/components/HeaderWithBack";
+import { layout, colors, buttons, typography } from "@/src/styles/common";
+import { useListItems, useShoppingLists } from "@/src/hooks";
 
 const styles = {
   addItemForm: {
-    flexDirection: 'row' as const,
+    flexDirection: "row" as const,
     padding: 16,
     backgroundColor: colors.white,
     borderBottomWidth: 1,
@@ -22,7 +30,7 @@ const styles = {
     marginRight: 8,
   },
   quantityContainer: {
-    flexDirection: 'row' as const,
+    flexDirection: "row" as const,
     width: 100,
     marginRight: 8,
   },
@@ -31,7 +39,7 @@ const styles = {
     backgroundColor: colors.gray100,
     borderRadius: 6,
     padding: 12,
-    textAlign: 'center',
+    textAlign: "center",
   },
   unitInput: {
     flex: 1,
@@ -45,11 +53,11 @@ const styles = {
   },
   itemName: {
     fontSize: 16,
-    fontWeight: '500',
+    fontWeight: "500",
     color: colors.black,
   },
   itemPurchased: {
-    textDecorationLine: 'line-through',
+    textDecorationLine: "line-through",
     color: colors.gray400,
   },
   itemQuantity: {
@@ -61,7 +69,7 @@ const styles = {
     padding: 8,
   },
   footer: {
-    position: 'absolute',
+    position: "absolute",
     bottom: 0,
     left: 0,
     right: 0,
@@ -75,18 +83,18 @@ const styles = {
   },
   loadingContainer: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
   },
   errorContainer: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     padding: 16,
   },
   errorText: {
     color: colors.danger,
-    textAlign: 'center',
+    textAlign: "center",
     marginBottom: 16,
   },
   listContent: {
@@ -94,8 +102,8 @@ const styles = {
     paddingBottom: 80, // Extra padding for the footer
   },
   itemRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     backgroundColor: colors.white,
     padding: 16,
     borderRadius: 8,
@@ -107,107 +115,113 @@ const styles = {
 
 export default function ListDetailScreen() {
   const { id } = useLocalSearchParams();
-  const listId = Array.isArray(id) ? id[0] : id || '';
-  
-  const { lists, loading: listsLoading, error: listsError } = useShoppingLists();
-  const { 
-    items, 
-    loading: itemsLoading, 
+  const listId = Array.isArray(id) ? id[0] : id || "";
+
+  const {
+    lists,
+    loading: listsLoading,
+    error: listsError,
+  } = useShoppingLists();
+  const {
+    items,
+    loading: itemsLoading,
     error: itemsError,
     addItem,
-    updateItem,
     removeItem,
-    markItemAsPurchased,
-    refreshItems
+    refreshItems,
   } = useListItems(listId);
-  
-  const [newItemName, setNewItemName] = useState('');
-  const [newItemQuantity, setNewItemQuantity] = useState('1');
-  const [newItemUnit, setNewItemUnit] = useState('');
+
+  const [newItemName, setNewItemName] = useState("");
+  const [newItemQuantity, setNewItemQuantity] = useState("1");
+  const [newItemUnit, setNewItemUnit] = useState("");
   const [isAddingItem, setIsAddingItem] = useState(false);
-  
+
   // Find the current list from our lists
-  const currentList = lists.find(list => list.id === listId);
-  
+  const currentList = lists.find((list) => list.id === listId);
+
   // Handle loading state
   if (listsLoading || itemsLoading) {
     return (
       <View style={styles.loadingContainer}>
         <ActivityIndicator size="large" color={colors.primary} />
-        <Text style={[typography.body, { marginTop: 16 }]}>Loading list...</Text>
+        <Text style={[typography.body, { marginTop: 16 }]}>
+          Loading list...
+        </Text>
       </View>
     );
   }
-  
+
   // Handle error state
   if (listsError || itemsError || !currentList) {
     return (
       <View style={styles.errorContainer}>
         <Text style={styles.errorText}>
-          {listsError?.message || itemsError?.message || 'List not found'}
+          {listsError?.message || itemsError?.message || "List not found"}
         </Text>
-        <TouchableOpacity 
-          style={buttons.secondary} 
-          onPress={() => router.replace('/lists')}
+        <TouchableOpacity
+          style={buttons.secondary}
+          onPress={() => router.replace("/lists")}
         >
           <Text style={typography.buttonTextSecondary}>Back to Lists</Text>
         </TouchableOpacity>
       </View>
     );
   }
-  
+
   const handleAddItem = async () => {
     if (!newItemName.trim()) return;
-    
+
     try {
       setIsAddingItem(true);
-      
+
       const quantity = parseInt(newItemQuantity, 10) || 1;
-      
+
       await addItem({
         name: newItemName,
         quantity,
         unit: newItemUnit,
         isPurchased: false,
-        listId
+        listId,
       });
-      
+
       // Clear the form
-      setNewItemName('');
-      setNewItemQuantity('1');
-      setNewItemUnit('');
+      setNewItemName("");
+      setNewItemQuantity("1");
+      setNewItemUnit("");
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Failed to add item';
-      Alert.alert('Error', errorMessage);
+      const errorMessage =
+        error instanceof Error ? error.message : "Failed to add item";
+      Alert.alert("Error", errorMessage);
     } finally {
       setIsAddingItem(false);
     }
   };
-  
+
   const handleDeleteItem = async (itemId: string) => {
     try {
       await removeItem(itemId);
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Failed to delete item';
-      Alert.alert('Error', errorMessage);
+      const errorMessage =
+        error instanceof Error ? error.message : "Failed to delete item";
+      Alert.alert("Error", errorMessage);
     }
   };
 
   const startShoppingWithThisList = () => {
     router.push({
-      pathname: '/shopping/session',
-      params: { listIds: listId }
+      pathname: "/shopping/session",
+      params: { listIds: listId },
     });
   };
-  
+
   return (
     <View style={layout.container}>
-      <HeaderWithBack 
+      <HeaderWithBack
         title={currentList.name}
         backTo="/lists"
         backTitle="My Lists"
       />
-      
+
       <View style={styles.addItemForm}>
         <TextInput
           style={styles.itemNameInput}
@@ -232,7 +246,7 @@ export default function ListDetailScreen() {
             editable={!isAddingItem}
           />
         </View>
-        <TouchableOpacity 
+        <TouchableOpacity
           style={[buttons.icon, isAddingItem && buttons.primaryDisabled]}
           onPress={handleAddItem}
           disabled={isAddingItem || !newItemName.trim()}
@@ -244,7 +258,7 @@ export default function ListDetailScreen() {
           )}
         </TouchableOpacity>
       </View>
-      
+
       {items.length === 0 ? (
         <View style={[layout.centered, { flex: 1 }]}>
           <Text style={typography.body}>This list is empty.</Text>
@@ -259,15 +273,13 @@ export default function ListDetailScreen() {
           renderItem={({ item }) => (
             <View style={styles.itemRow}>
               <View style={styles.itemDetails}>
-                <Text style={styles.itemName}>
-                  {item.name}
-                </Text>
+                <Text style={styles.itemName}>{item.name}</Text>
                 <Text style={styles.itemQuantity}>
                   {item.quantity} {item.unit}
                 </Text>
               </View>
-              
-              <TouchableOpacity 
+
+              <TouchableOpacity
                 style={styles.deleteButton}
                 onPress={() => handleDeleteItem(item.id)}
               >
@@ -282,12 +294,16 @@ export default function ListDetailScreen() {
       )}
 
       <View style={styles.footer}>
-        <TouchableOpacity 
+        <TouchableOpacity
           style={buttons.primary}
           onPress={startShoppingWithThisList}
         >
           <View style={buttons.iconText}>
-            <ShoppingBag size={20} color={colors.white} style={styles.buttonIcon} />
+            <ShoppingBag
+              size={20}
+              color={colors.white}
+              style={styles.buttonIcon}
+            />
             <Text style={typography.buttonText}>Shop with this list</Text>
           </View>
         </TouchableOpacity>

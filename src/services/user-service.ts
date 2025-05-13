@@ -39,9 +39,9 @@ export class LocalUserService implements UserService {
   async initializeApp(): Promise<void> {
     try {
       await db.initializeDatabase();
-      console.log('Database initialized successfully');
+      console.log("Database initialized successfully");
     } catch (error) {
-      console.error('Failed to initialize database:', error);
+      console.error("Failed to initialize database:", error);
       throw error;
     }
   }
@@ -54,11 +54,11 @@ export class LocalUserService implements UserService {
    */
   async updateUser(userId: string, updates: Partial<User>): Promise<User> {
     const user = await db.users.get(userId);
-    
+
     if (!user || user.deletedAt) {
-      throw new Error('User not found');
+      throw new Error("User not found");
     }
-    
+
     const now = new Date();
     const updatedUser = {
       ...user,
@@ -66,7 +66,7 @@ export class LocalUserService implements UserService {
       updatedAt: now,
       lastModifiedAt: now,
     };
-    
+
     await db.users.put(updatedUser);
     return updatedUser;
   }

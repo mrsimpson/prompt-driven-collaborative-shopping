@@ -1,6 +1,6 @@
-import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
-import { useAuth } from '@/src/contexts/AuthContext';
+import React from "react";
+import { View, Text, StyleSheet } from "react-native";
+import { useAuth } from "@/src/contexts/AuthContext";
 
 export const LocalModeHeader: React.FC = () => {
   const { isLocalMode } = useAuth();
@@ -18,16 +18,16 @@ export const LocalModeHeader: React.FC = () => {
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: '#FEF3C7', // Light amber color
+    backgroundColor: "#FEF3C7", // Light amber color
     paddingVertical: 8,
     paddingHorizontal: 16,
     borderBottomWidth: 1,
-    borderBottomColor: '#F59E0B', // Amber border
-    alignItems: 'center',
+    borderBottomColor: "#F59E0B", // Amber border
+    alignItems: "center",
   },
   text: {
-    color: '#92400E', // Dark amber text
+    color: "#92400E", // Dark amber text
     fontSize: 12,
-    fontWeight: '500',
+    fontWeight: "500",
   },
 });

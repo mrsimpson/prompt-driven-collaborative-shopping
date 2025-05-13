@@ -1,8 +1,8 @@
-import React from 'react';
-import { View, Text, TouchableOpacity } from 'react-native';
-import { ArrowLeft } from 'lucide-react-native';
-import { router } from 'expo-router';
-import { headers, typography } from '@/src/styles/common';
+import React from "react";
+import { View, Text, TouchableOpacity } from "react-native";
+import { ArrowLeft } from "lucide-react-native";
+import { router } from "expo-router";
+import { headers, typography } from "@/src/styles/common";
 
 interface HeaderWithBackProps {
   title: string;
@@ -35,16 +35,12 @@ export const HeaderWithBack: React.FC<HeaderWithBackProps> = ({
         <ArrowLeft size={24} color="#111827" />
         {backTitle && <Text style={headers.backButtonText}>{backTitle}</Text>}
       </TouchableOpacity>
-      
+
       <View style={headers.titleContainer}>
         <Text style={typography.title}>{title}</Text>
       </View>
-      
-      {rightElement ? (
-        rightElement
-      ) : (
-        <View style={headers.rightPlaceholder} />
-      )}
+
+      {rightElement ? rightElement : <View style={headers.rightPlaceholder} />}
     </View>
   );
 };

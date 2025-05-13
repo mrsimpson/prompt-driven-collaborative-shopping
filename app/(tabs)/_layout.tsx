@@ -36,7 +36,9 @@ export default function TabLayout() {
         name="lists"
         options={{
           title: "My Lists",
-          tabBarIcon: ({ color, size }) => <ShoppingCart size={size} color={color} />,
+          tabBarIcon: ({ color, size }) => (
+            <ShoppingCart size={size} color={color} />
+          ),
         }}
       />
       <Tabs.Screen
