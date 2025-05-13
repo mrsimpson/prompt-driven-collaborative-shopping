@@ -50,8 +50,13 @@ export abstract class DexieBaseRepository<T extends BaseEntity>
    * @returns Array of active entities
    */
   async findActive(): Promise<T[]> {
-    // Use filter instead of equals for null check
-    return this.table.filter(item => item.deletedAt === undefined || item.deletedAt === null).toArray();
+    // Use Dexie's collection method to create a more efficient query
+    // This leverages database indexes instead of loading all records into memory
+    // We need to use type assertions to satisfy TypeScript's type checking
+    return this.table
+      .where('deletedAt')
+      .anyOf([null, undefined] as any[])
+      .toArray();
   }
 
   /**
