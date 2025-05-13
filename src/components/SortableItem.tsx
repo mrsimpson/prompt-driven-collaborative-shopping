@@ -8,6 +8,17 @@ interface SortableItemProps {
   children: React.ReactNode;
 }
 
+// Define the expected props for the child component
+interface ChildProps {
+  isDragging?: boolean;
+  // Instead of passing dragHandleProps directly, we'll pass individual props
+  onMouseDown?: (event: any) => void;
+  onTouchStart?: (event: any) => void;
+  'aria-roledescription'?: string;
+  role?: string;
+  tabIndex?: number;
+}
+
 export function SortableItem({ id, children }: SortableItemProps) {
   const {
     attributes,
@@ -18,6 +29,7 @@ export function SortableItem({ id, children }: SortableItemProps) {
     isDragging,
   } = useSortable({ id });
 
+  // Define the style with proper types
   const style = {
     transform: CSS.Transform.toString(transform ? {
       x: transform.x,
@@ -36,9 +48,18 @@ export function SortableItem({ id, children }: SortableItemProps) {
     zIndex: isDragging ? 999 : 1,
   };
 
-  // Use a type assertion to handle the ref type mismatch between React Native and Web
-  const setRef = (node: any) => {
-    setNodeRef(node);
+  // Create a properly typed ref handler
+  const setRef = React.useCallback((node: View | null) => {
+    // The setNodeRef function expects an HTMLElement in web context
+    // but we're using React Native's View component
+    setNodeRef(node as unknown as HTMLElement);
+  }, [setNodeRef]);
+
+  // Extract the props we need to pass to the child
+  const childProps: ChildProps = {
+    isDragging,
+    ...attributes,
+    ...listeners,
   };
 
   return (
@@ -46,12 +67,8 @@ export function SortableItem({ id, children }: SortableItemProps) {
       ref={setRef} 
       style={[styles.container, style]}
     >
-      {React.cloneElement(children as React.ReactElement, {
-        // Use a type assertion to avoid the TypeScript error
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        ...(({ dragHandleProps: { ...attributes, ...listeners } } as any)),
-        isDragging,
-      })}
+      {React.isValidElement(children) && 
+        React.cloneElement(children, childProps)}
     </View>
   );
 }

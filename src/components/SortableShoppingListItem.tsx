@@ -37,8 +37,10 @@ export const SortableListItem: React.FC<SortableListItemProps> = ({
         item={item}
         onUpdate={onUpdate}
         onDelete={onDelete}
-        dragHandleProps={{ ...attributes, ...listeners }}
         isDragging={isDragging}
+        // Pass individual listener props instead of dragHandleProps
+        {...attributes}
+        {...listeners}
       />
     </div>
   );

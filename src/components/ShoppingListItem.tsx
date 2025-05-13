@@ -26,7 +26,12 @@ interface ShoppingListItemProps {
   item: ListItem;
   onUpdate: (id: string, updates: Partial<ListItem>) => Promise<void>;
   onDelete?: (id: string) => Promise<void>;
-  dragHandleProps?: any;
+  // Define the expected props from SortableItem
+  onMouseDown?: (event: any) => void;
+  onTouchStart?: (event: any) => void;
+  'aria-roledescription'?: string;
+  role?: string;
+  tabIndex?: number;
   isDragging?: boolean;
   mode?: 'edit' | 'shopping';
   sourceListName?: string;
@@ -36,10 +41,14 @@ export const ShoppingListItem: React.FC<ShoppingListItemProps> = ({
   item,
   onUpdate,
   onDelete,
-  dragHandleProps = {},
   isDragging = false,
   mode = 'edit',
   sourceListName,
+  onMouseDown,
+  onTouchStart,
+  'aria-roledescription': ariaRoleDescription,
+  role,
+  tabIndex,
 }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [editName, setEditName] = useState(item.name);
@@ -196,12 +205,15 @@ export const ShoppingListItem: React.FC<ShoppingListItemProps> = ({
       ]}>
         {/* Show drag handle in edit mode, checkbox in shopping mode */}
         {mode === 'edit' ? (
-          <TouchableOpacity 
+          <View 
             style={styles.dragHandle}
-            {...dragHandleProps}
           >
-            <GripVertical size={16} color={colors.gray400} />
-          </TouchableOpacity>
+            <TouchableOpacity
+              onPressIn={onTouchStart}
+            >
+              <GripVertical size={16} color={colors.gray400} />
+            </TouchableOpacity>
+          </View>
         ) : (
           <TouchableOpacity
             style={[

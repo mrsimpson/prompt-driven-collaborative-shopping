@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { ListItem } from "../types/models";
 import { ServiceFactory } from "../services";
+import { safeParseListItem, safeParseListItems } from "../utils/schemas";
 
 export function useListItems(listId: string) {
   const [items, setItems] = useState<ListItem[]>([]);
@@ -16,7 +17,9 @@ export function useListItems(listId: string) {
       const result = await shoppingListService.getListItems(listId);
 
       if (result.success) {
-        setItems(result.data || []);
+        // Parse and validate the items
+        const validItems = safeParseListItems(result.data);
+        setItems(validItems);
       } else {
         throw new Error(result.error);
       }
@@ -49,14 +52,12 @@ export function useListItems(listId: string) {
           throw new Error(result.error);
         }
 
-        // Ensure we're adding a valid item
-        if (result.data) {
-          // Use a non-arrow function to ensure proper typing
-          setItems(function(prevItems: ListItem[]): ListItem[] {
-            // Type assertion to ensure result.data is treated as ListItem
-            return [...prevItems, result.data as ListItem];
-          });
+        // Parse and validate the returned item
+        const validItem = safeParseListItem(result.data);
+        if (validItem) {
+          setItems(prevItems => [...prevItems, validItem]);
         }
+        
         return result.data;
       } catch (err) {
         setError(
@@ -83,11 +84,12 @@ export function useListItems(listId: string) {
           throw new Error(result.error);
         }
 
-        // Safely update items, ensuring no undefined values
-        setItems(function(prevItems: ListItem[]): ListItem[] {
-          return prevItems.map((item) => {
-            if (item.id === itemId && result.data) {
-              return result.data as ListItem;
+        // Parse and validate the returned item
+        const validItem = safeParseListItem(result.data);
+        setItems(prevItems => {
+          return prevItems.map(item => {
+            if (item.id === itemId && validItem) {
+              return validItem;
             }
             return item;
           });
@@ -115,7 +117,7 @@ export function useListItems(listId: string) {
           throw new Error(result.error);
         }
 
-        setItems((prevItems) => prevItems.filter((item) => item.id !== itemId));
+        setItems(prevItems => prevItems.filter(item => item.id !== itemId));
       } catch (err) {
         setError(
           err instanceof Error
@@ -138,7 +140,7 @@ export function useListItems(listId: string) {
           throw new Error("reorderListItems method not available");
         }
         
-        // Use type assertion to call the method
+        // We still need this type assertion for the method call
         const result = await (shoppingListService as any).reorderListItems(
           listId,
           itemIds,
@@ -148,10 +150,9 @@ export function useListItems(listId: string) {
           throw new Error(result.error);
         }
 
-        // Update the local items with the new order
-        if (Array.isArray(result.data)) {
-          setItems(result.data as ListItem[]);
-        }
+        // Parse and validate the returned items
+        const validItems = safeParseListItems(result.data);
+        setItems(validItems);
       } catch (err) {
         setError(
           err instanceof Error ? err : new Error("Failed to reorder items"),
@@ -177,11 +178,16 @@ export function useListItems(listId: string) {
           throw new Error(result.error);
         }
 
-        // Safely update items, ensuring no undefined values
-        setItems(function(prevItems: ListItem[]): ListItem[] {
-          return prevItems.map((item) => {
-            if (item.id === itemId && result.data) {
-              return result.data as ListItem;
+        // Parse and validate the returned item
+        const validItem = safeParseListItem(result.data);
+        setItems(prevItems => {
+          return prevItems.map(item => {
+            if (item.id === itemId) {
+              if (validItem) {
+                return validItem;
+              }
+              // Apply the purchase status change locally if the server data is invalid
+              return { ...item, isPurchased };
             }
             return item;
           });

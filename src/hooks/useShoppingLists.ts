@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { ShoppingList } from "../types/models";
 import { ServiceFactory } from "../services";
+import { safeParseShoppingList, safeParseShoppingLists } from "../utils/schemas";
 
 export function useShoppingLists() {
   const [lists, setLists] = useState<ShoppingList[]>([]);
@@ -22,7 +23,9 @@ export function useShoppingLists() {
       const result = await shoppingListService.getUserLists(defaultUserId);
 
       if (result.success) {
-        setLists(result.data || []);
+        // Parse and validate the lists
+        const validLists = safeParseShoppingLists(result.data);
+        setLists(validLists);
       } else {
         throw new Error(result.error);
       }
@@ -59,9 +62,11 @@ export function useShoppingLists() {
           throw new Error(result.error);
         }
 
-        setLists(function(prevLists: ShoppingList[]): ShoppingList[] {
-          return [...prevLists, result.data as ShoppingList];
-        });
+        // Parse and validate the returned list
+        const validList = safeParseShoppingList(result.data);
+        if (validList) {
+          setLists(prevLists => [...prevLists, validList]);
+        }
         
         return result.data;
       } catch (err) {
@@ -97,10 +102,12 @@ export function useShoppingLists() {
           throw new Error(result.error);
         }
 
-        setLists(function(prevLists: ShoppingList[]): ShoppingList[] {
-          return prevLists.map((list) => {
-            if (list.id === listId && result.data) {
-              return result.data as ShoppingList;
+        // Parse and validate the returned list
+        const validList = safeParseShoppingList(result.data);
+        setLists(prevLists => {
+          return prevLists.map(list => {
+            if (list.id === listId && validList) {
+              return validList;
             }
             return list;
           });
@@ -134,7 +141,7 @@ export function useShoppingLists() {
           throw new Error(result.error);
         }
 
-        setLists((prevLists) => prevLists.filter((list) => list.id !== listId));
+        setLists(prevLists => prevLists.filter(list => list.id !== listId));
       } catch (err) {
         setError(
           err instanceof Error
