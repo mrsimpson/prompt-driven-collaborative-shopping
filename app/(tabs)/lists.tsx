@@ -23,13 +23,13 @@ export default function ListsScreen() {
     lists: shoppingLists,
     loading,
     error,
-    refreshLists,
+    fetchLists,
   } = useShoppingLists();
 
   // Render loading state
   if (loading) {
     return (
-      <View style={[layout.container, layout.centered]}>
+      <View style={[layout.container, layout.center]}>
         <ActivityIndicator size="large" color={colors.primary} />
         <Text style={[typography.body, { marginTop: 16 }]}>
           Loading your lists...
@@ -41,13 +41,13 @@ export default function ListsScreen() {
   // Render error state
   if (error) {
     return (
-      <View style={[layout.container, layout.centered]}>
+      <View style={[layout.container, layout.center]}>
         <Text style={[typography.body, { color: colors.danger }]}>
           Failed to load shopping lists
         </Text>
         <TouchableOpacity
           style={[buttons.secondary, { marginTop: 16 }]}
-          onPress={refreshLists}
+          onPress={fetchLists}
         >
           <Text style={typography.buttonTextSecondary}>Try Again</Text>
         </TouchableOpacity>
@@ -69,7 +69,7 @@ export default function ListsScreen() {
       </View>
 
       {shoppingLists.length === 0 ? (
-        <View style={[layout.centered, { flex: 1 }]}>
+        <View style={[layout.center, { flex: 1 }]}>
           <Text style={typography.body}>
             You don&apos;t have any shopping lists yet.
           </Text>
@@ -97,7 +97,7 @@ export default function ListsScreen() {
           )}
           contentContainerStyle={lists.content}
           refreshing={loading}
-          onRefresh={refreshLists}
+          onRefresh={fetchLists}
         />
       )}
     </View>

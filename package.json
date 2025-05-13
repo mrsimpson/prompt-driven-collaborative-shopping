@@ -15,6 +15,7 @@
     "format": "prettier . --write",
     "format:check": "prettier . --check",
     "test": "jest",
+    "typecheck": "tsc",
     "prepare": "husky install"
   },
   "dependencies": {

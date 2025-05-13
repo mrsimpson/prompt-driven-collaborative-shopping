@@ -86,7 +86,7 @@ export const InlineEdit: React.FC<InlineEditProps> = ({
     return (
       <TextInput
         ref={inputRef}
-        style={[styles.text, styles.input, textStyle, inputStyle]}
+        style={[styles.text, styles.input, textStyle]}
         value={editValue}
         onChangeText={setEditValue}
         placeholder={placeholder}

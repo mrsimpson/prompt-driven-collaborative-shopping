@@ -49,7 +49,13 @@ export function useShoppingSession(sessionId?: string) {
         throw new Error(sessionWithListsResult.error);
       }
 
-      setLists(sessionWithListsResult.lists);
+      // Check if data exists before accessing its properties
+      if (sessionWithListsResult.data) {
+        // Access the lists property from the data object
+        setLists(sessionWithListsResult.data.lists || []);
+      } else {
+        setLists([]);
+      }
 
       // Get consolidated items
       const itemsResult =
@@ -59,7 +65,7 @@ export function useShoppingSession(sessionId?: string) {
         throw new Error(itemsResult.error);
       }
 
-      setItems(itemsResult.data);
+      setItems(itemsResult.data || []);
     } catch (err) {
       setError(
         err instanceof Error
@@ -112,6 +118,10 @@ export function useShoppingSession(sessionId?: string) {
         }
 
         const newSession = sessionResult.data;
+        if (!newSession) {
+          throw new Error("Failed to create shopping session");
+        }
+        
         setSession(newSession);
 
         // Get the lists for this session
@@ -122,7 +132,8 @@ export function useShoppingSession(sessionId?: string) {
 
         const validLists = listsResults
           .filter((result) => result.success)
-          .map((result) => result.data);
+          .map((result) => result.data)
+          .filter((list): list is ShoppingList => list !== undefined);
 
         setLists(validLists);
 
@@ -135,7 +146,7 @@ export function useShoppingSession(sessionId?: string) {
           throw new Error(itemsResult.error);
         }
 
-        setItems(itemsResult.data);
+        setItems(itemsResult.data || []);
 
         return newSession;
       } catch (err) {
@@ -184,7 +195,7 @@ export function useShoppingSession(sessionId?: string) {
 
         // Update local state
         setItems((prevItems) =>
-          prevItems.map((i) => (i.id === itemId ? result.data : i)),
+          prevItems.map((i) => (i.id === itemId ? result.data : i)).filter((i): i is ListItem => i !== undefined),
         );
 
         return result.data;
@@ -250,7 +261,7 @@ export function useShoppingSession(sessionId?: string) {
       // End the session without creating a new list for unpurchased items
       const result = await shoppingSessionService.endSession({
         sessionId: session.id,
-        status: "cancelled",
+        status: ShoppingSessionStatus.CANCELLED,
         createNewListForUnpurchased: false,
       });
 

@@ -1,18 +1,14 @@
-import { useState, useEffect, useCallback } from "react";
-import { ServiceFactory } from "@/src/services";
-import { ShoppingList } from "@/src/types/models";
+import { useCallback, useEffect, useState } from "react";
+import { ShoppingList } from "../types/models";
+import { ServiceFactory } from "../services";
 
-/**
- * Hook for managing shopping lists
- * @returns Object with lists, loading state, error state, and functions to manage lists
- */
 export function useShoppingLists() {
   const [lists, setLists] = useState<ShoppingList[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
-
   const shoppingListService = ServiceFactory.getShoppingListService();
 
+  // Fetch shopping lists
   const fetchLists = useCallback(async () => {
     try {
       setLoading(true);
@@ -26,7 +22,7 @@ export function useShoppingLists() {
       const result = await shoppingListService.getUserLists(defaultUserId);
 
       if (result.success) {
-        setLists(result.data);
+        setLists(result.data || []);
       } else {
         throw new Error(result.error);
       }
@@ -42,10 +38,12 @@ export function useShoppingLists() {
     }
   }, [shoppingListService]);
 
+  // Load lists on mount
   useEffect(() => {
     fetchLists();
   }, [fetchLists]);
 
+  // Create a new shopping list
   const createList = useCallback(
     async (name: string, description: string) => {
       try {
@@ -53,7 +51,7 @@ export function useShoppingLists() {
         const defaultUserId = "default-user-id";
 
         const result = await shoppingListService.createList(
-          { name, description },
+          { name, description, isShared: false },
           defaultUserId,
         );
 
@@ -61,7 +59,10 @@ export function useShoppingLists() {
           throw new Error(result.error);
         }
 
-        setLists((prevLists) => [...prevLists, result.data]);
+        setLists(function(prevLists: ShoppingList[]): ShoppingList[] {
+          return [...prevLists, result.data as ShoppingList];
+        });
+        
         return result.data;
       } catch (err) {
         setError(
@@ -76,24 +77,34 @@ export function useShoppingLists() {
     [shoppingListService],
   );
 
+  // Update a shopping list
   const updateList = useCallback(
     async (listId: string, updates: Partial<ShoppingList>) => {
       try {
         setError(null);
+        // Add the default user ID as required by the service
         const defaultUserId = "default-user-id";
-
+        
         const result = await shoppingListService.updateList(
-          { id: listId, ...updates },
-          defaultUserId,
+          {
+            id: listId,
+            ...updates,
+          },
+          defaultUserId
         );
 
         if (!result.success) {
           throw new Error(result.error);
         }
 
-        setLists((prevLists) =>
-          prevLists.map((list) => (list.id === listId ? result.data : list)),
-        );
+        setLists(function(prevLists: ShoppingList[]): ShoppingList[] {
+          return prevLists.map((list) => {
+            if (list.id === listId && result.data) {
+              return result.data as ShoppingList;
+            }
+            return list;
+          });
+        });
 
         return result.data;
       } catch (err) {
@@ -109,16 +120,15 @@ export function useShoppingLists() {
     [shoppingListService],
   );
 
+  // Delete a shopping list
   const deleteList = useCallback(
     async (listId: string) => {
       try {
         setError(null);
+        // Add the default user ID as required by the service
         const defaultUserId = "default-user-id";
-
-        const result = await shoppingListService.deleteList(
-          listId,
-          defaultUserId,
-        );
+        
+        const result = await shoppingListService.deleteList(listId, defaultUserId);
 
         if (!result.success) {
           throw new Error(result.error);
@@ -142,7 +152,8 @@ export function useShoppingLists() {
     lists,
     loading,
     error,
-    refreshLists: fetchLists,
+    fetchLists: fetchLists, // Alias for refreshLists
+    refreshLists: fetchLists, // Add this for compatibility
     createList,
     updateList,
     deleteList,

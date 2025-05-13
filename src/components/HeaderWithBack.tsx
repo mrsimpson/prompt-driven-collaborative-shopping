@@ -1,7 +1,7 @@
 import React from "react";
 import { View, Text, TouchableOpacity } from "react-native";
 import { ArrowLeft } from "lucide-react-native";
-import { router } from "expo-router";
+import { RelativePathString, router } from "expo-router";
 import { headers, typography } from "@/src/styles/common";
 
 interface HeaderWithBackProps {
@@ -23,7 +23,7 @@ export const HeaderWithBack: React.FC<HeaderWithBackProps> = ({
     if (onBack) {
       onBack();
     } else if (backTo) {
-      router.push(backTo);
+      router.push(backTo as RelativePathString);
     } else {
       router.back();
     }

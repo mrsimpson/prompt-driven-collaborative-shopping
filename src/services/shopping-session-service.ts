@@ -83,7 +83,8 @@ export class LocalShoppingSessionService implements ShoppingSessionService {
         // End the existing session
         await this.endSession({
           sessionId: existingSession.id,
-          createNewListForUnpurchased: true,
+          status: ShoppingSessionStatus.CANCELLED,
+          createNewListForUnpurchased: false,
         });
       }
 
@@ -272,7 +273,7 @@ export class LocalShoppingSessionService implements ShoppingSessionService {
 
   /**
    * End a shopping session
-   * @param params Session ending parameters
+   * @pa-ram params Session ending parameters
    * @returns Result with the updated session
    */
   async endSession(

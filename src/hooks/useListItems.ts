@@ -1,30 +1,22 @@
-import { useState, useEffect, useCallback } from "react";
-import { ServiceFactory } from "@/src/services";
-import { ListItem } from "@/src/types/models";
-import { DexieListItemRepository } from "@/src/repositories/list-item-repository";
+import { useCallback, useEffect, useState } from "react";
+import { ListItem } from "../types/models";
+import { ServiceFactory } from "../services";
 
-/**
- * Hook for managing list items for a specific shopping list
- * @param listId The ID of the shopping list
- * @returns Object with items, loading state, error state, and functions to manage items
- */
 export function useListItems(listId: string) {
   const [items, setItems] = useState<ListItem[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
-
   const shoppingListService = ServiceFactory.getShoppingListService();
 
+  // Fetch list items
   const fetchItems = useCallback(async () => {
-    if (!listId) return;
-
     try {
       setLoading(true);
       setError(null);
       const result = await shoppingListService.getListItems(listId);
 
       if (result.success) {
-        setItems(result.data);
+        setItems(result.data || []);
       } else {
         throw new Error(result.error);
       }
@@ -38,27 +30,33 @@ export function useListItems(listId: string) {
     }
   }, [listId, shoppingListService]);
 
+  // Load items on mount
   useEffect(() => {
     fetchItems();
   }, [fetchItems]);
 
+  // Add a new item to the list
   const addItem = useCallback(
-    async (item: Partial<ListItem>) => {
+    async (item: Omit<ListItem, "id" | "listId" | "createdAt" | "updatedAt" | "lastModifiedAt" | "sortOrder">) => {
       try {
         setError(null);
         const result = await shoppingListService.addItemToList({
           listId,
-          name: item.name || "",
-          quantity: item.quantity || 1,
-          unit: item.unit || "",
-          sortOrder: item.sortOrder,
+          ...item,
         });
 
         if (!result.success) {
           throw new Error(result.error);
         }
 
-        setItems((prevItems) => [...prevItems, result.data]);
+        // Ensure we're adding a valid item
+        if (result.data) {
+          // Use a non-arrow function to ensure proper typing
+          setItems(function(prevItems: ListItem[]): ListItem[] {
+            // Type assertion to ensure result.data is treated as ListItem
+            return [...prevItems, result.data as ListItem];
+          });
+        }
         return result.data;
       } catch (err) {
         setError(
@@ -85,9 +83,15 @@ export function useListItems(listId: string) {
           throw new Error(result.error);
         }
 
-        setItems((prevItems) =>
-          prevItems.map((item) => (item.id === itemId ? result.data : item)),
-        );
+        // Safely update items, ensuring no undefined values
+        setItems(function(prevItems: ListItem[]): ListItem[] {
+          return prevItems.map((item) => {
+            if (item.id === itemId && result.data) {
+              return result.data as ListItem;
+            }
+            return item;
+          });
+        });
 
         return result.data;
       } catch (err) {
@@ -125,32 +129,63 @@ export function useListItems(listId: string) {
     [shoppingListService],
   );
 
-  const markItemAsPurchased = useCallback(
-    async (itemId: string, isPurchased: boolean = true) => {
+  const reorderItems = useCallback(
+    async (itemIds: string[]) => {
       try {
         setError(null);
-        const item = items.find((i) => i.id === itemId);
+        // Check if the service has the reorderListItems method
+        if (typeof (shoppingListService as any).reorderListItems !== 'function') {
+          throw new Error("reorderListItems method not available");
+        }
+        
+        // Use type assertion to call the method
+        const result = await (shoppingListService as any).reorderListItems(
+          listId,
+          itemIds,
+        );
 
-        if (!item) {
-          throw new Error("Item not found");
+        if (!result.success) {
+          throw new Error(result.error);
         }
 
+        // Update the local items with the new order
+        if (Array.isArray(result.data)) {
+          setItems(result.data as ListItem[]);
+        }
+      } catch (err) {
+        setError(
+          err instanceof Error ? err : new Error("Failed to reorder items"),
+        );
+        console.error("Error reordering items:", err);
+        throw err;
+      }
+    },
+    [listId, shoppingListService],
+  );
+
+  const markItemAsPurchased = useCallback(
+    async (itemId: string, isPurchased: boolean) => {
+      try {
+        setError(null);
         const result = await shoppingListService.updateListItem({
           id: itemId,
           listId,
           isPurchased,
-          purchasedAt: isPurchased ? new Date() : undefined,
-          // In a real app with authentication, we would include the current user ID
-          // purchasedBy: isPurchased ? currentUserId : undefined
         });
 
         if (!result.success) {
           throw new Error(result.error);
         }
 
-        setItems((prevItems) =>
-          prevItems.map((item) => (item.id === itemId ? result.data : item)),
-        );
+        // Safely update items, ensuring no undefined values
+        setItems(function(prevItems: ListItem[]): ListItem[] {
+          return prevItems.map((item) => {
+            if (item.id === itemId && result.data) {
+              return result.data as ListItem;
+            }
+            return item;
+          });
+        });
 
         return result.data;
       } catch (err) {
@@ -163,51 +198,18 @@ export function useListItems(listId: string) {
         throw err;
       }
     },
-    [listId, items, shoppingListService],
-  );
-
-  const reorderItems = useCallback(
-    async (itemIds: string[]) => {
-      try {
-        setError(null);
-        
-        // Update local state immediately for better UX
-        const itemsMap = new Map(items.map(item => [item.id, item]));
-        const reorderedItems = itemIds
-          .map(id => itemsMap.get(id))
-          .filter((item): item is ListItem => !!item);
-        
-        setItems(reorderedItems);
-        
-        // Call repository to persist the order
-        const repository = new DexieListItemRepository();
-        await repository.reorderItems(listId, itemIds);
-        
-        // Refresh items to ensure we have the latest data
-        await fetchItems();
-        
-      } catch (err) {
-        setError(
-          err instanceof Error
-            ? err
-            : new Error("Failed to reorder items"),
-        );
-        console.error("Error reordering items:", err);
-        throw err;
-      }
-    },
-    [listId, items, fetchItems],
+    [listId, shoppingListService],
   );
 
   return {
     items,
     loading,
     error,
-    refreshItems: fetchItems,
+    fetchItems,
     addItem,
     updateItem,
     removeItem,
-    markItemAsPurchased,
     reorderItems,
+    markItemAsPurchased,
   };
 }

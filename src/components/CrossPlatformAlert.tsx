@@ -86,10 +86,11 @@ export const CrossPlatformAlert = {
           const ReactDOM = require("react-dom/client");
 
           // Get or create the root
-          let root = alertContainer._reactRoot;
+          // Use a property name that doesn't conflict with TypeScript definitions
+          let root = (alertContainer as any)._reactRootCustom;
           if (!root) {
             root = ReactDOM.createRoot(alertContainer);
-            alertContainer._reactRoot = root;
+            (alertContainer as any)._reactRootCustom = root;
           }
 
           // Render the WebAlert component

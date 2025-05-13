@@ -52,14 +52,14 @@ const styles = {
   },
   quantityContainer: {
     flexDirection: "row" as const,
-    alignItems: "center",
+    alignItems: "center" as const,
   },
   quantityInput: {
     width: 40,
     backgroundColor: colors.gray100,
     borderRadius: 6,
     padding: 12,
-    textAlign: "center",
+    textAlign: "center" as const,
     marginRight: 4,
   },
   unitInput: {
@@ -67,11 +67,11 @@ const styles = {
     backgroundColor: colors.gray100,
     borderRadius: 6,
     padding: 12,
-    textAlign: "center",
+    textAlign: "center" as const,
     marginRight: 8,
   },
   footer: {
-    position: "absolute",
+    position: "absolute" as const,
     bottom: 0,
     left: 0,
     right: 0,
@@ -85,18 +85,18 @@ const styles = {
   },
   loadingContainer: {
     flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
+    justifyContent: "center" as const,
+    alignItems: "center" as const,
   },
   errorContainer: {
     flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
+    justifyContent: "center" as const,
+    alignItems: "center" as const,
     padding: 16,
   },
   errorText: {
     color: colors.danger,
-    textAlign: "center",
+    textAlign: "center" as const,
     marginBottom: 16,
   },
   listContent: {
@@ -110,8 +110,8 @@ const styles = {
   },
   emptyState: {
     flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
+    justifyContent: "center" as const,
+    alignItems: "center" as const,
   },
 };
 
@@ -194,7 +194,6 @@ export default function ListDetailScreen() {
         quantity,
         unit,
         isPurchased: false,
-        listId,
       });
 
       // Clear the form

@@ -28,8 +28,21 @@ export function useUser() {
 
       // In local mode or when authenticated, get the current user
       if (isLocalMode || isAuthenticated) {
-        const currentUser = await userService.getCurrentUser();
-        setUser(currentUser);
+        const currentUserResult = await userService.getCurrentUser();
+        
+        if (currentUserResult.success) {
+          // Explicitly handle the null case and ensure data is defined
+          if (currentUserResult.data === null) {
+            setUser(null);
+          } else if (currentUserResult.data !== undefined) {
+            setUser(currentUserResult.data as User);
+          } else {
+            // Handle the undefined case
+            setUser(null);
+          }
+        } else {
+          throw new Error(currentUserResult.error);
+        }
       }
     } catch (err) {
       setError(

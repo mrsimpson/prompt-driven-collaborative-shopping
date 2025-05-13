@@ -222,11 +222,9 @@ export const ShoppingListItem: React.FC<ShoppingListItemProps> = ({
                 onSave={handleNameChange}
                 isEditing={isEditing}
                 setIsEditing={setIsEditing}
-                textStyle={[
-                  styles.itemName,
-                  item.isPurchased && styles.itemPurchased
-                ]}
-                inputStyle={styles.itemNameInput}
+                textStyle={
+                  item.isPurchased ? styles.itemPurchased : styles.itemName
+                }
                 placeholder="Item name"
                 onSubmitEditing={handleNameSubmit}
                 autoFocus={false}

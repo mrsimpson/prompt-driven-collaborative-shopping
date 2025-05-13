@@ -89,7 +89,7 @@ export default function ShoppingSessionScreen() {
   // Handle loading state
   if (loading) {
     return (
-      <View style={[layout.container, layout.centered]}>
+      <View style={[layout.container, layout.center]}>
         <ActivityIndicator size="large" color={colors.primary} />
         <Text style={[typography.body, { marginTop: 16 }]}>
           {session
@@ -103,7 +103,7 @@ export default function ShoppingSessionScreen() {
   // Handle error state
   if (error) {
     return (
-      <View style={[layout.container, layout.centered]}>
+      <View style={[layout.container, layout.center]}>
         <Text
           style={[typography.body, { color: colors.danger, marginBottom: 16 }]}
         >
@@ -122,7 +122,7 @@ export default function ShoppingSessionScreen() {
   // Handle case where no lists were selected
   if (listIds.length === 0) {
     return (
-      <View style={[layout.container, layout.centered]}>
+      <View style={[layout.container, layout.center]}>
         <Text style={typography.body}>No shopping lists selected</Text>
         <TouchableOpacity
           style={[buttons.primary, { marginTop: 16 }]}
@@ -281,10 +281,10 @@ export default function ShoppingSessionScreen() {
           return (
             <ShoppingListItem
               item={item}
-              onUpdate={(id, updates) => {
+              onUpdate={async (id, updates) => {
                 // For shopping mode, we only care about the isPurchased property
                 if (updates.isPurchased !== undefined) {
-                  handleToggleItemPurchased(id, !updates.isPurchased);
+                  await handleToggleItemPurchased(id, !updates.isPurchased);
                 }
               }}
               mode="shopping"

@@ -100,6 +100,7 @@ export class ShareMyCartDatabase extends Dexie {
           createdAt: now,
           updatedAt: now,
           lastModifiedAt: now,
+          sortOrder: 1
         },
         {
           id: "sample-item-2",
@@ -111,6 +112,7 @@ export class ShareMyCartDatabase extends Dexie {
           createdAt: now,
           updatedAt: now,
           lastModifiedAt: now,
+          sortOrder: 2
         },
         {
           id: "sample-item-3",
@@ -122,6 +124,7 @@ export class ShareMyCartDatabase extends Dexie {
           createdAt: now,
           updatedAt: now,
           lastModifiedAt: now,
+          sortOrder: 3
         },
       ]);
     }

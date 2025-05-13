@@ -33,7 +33,8 @@ export abstract class DexieBaseRepository<T extends BaseEntity>
    * @returns The entity or null if not found
    */
   async findById(id: string): Promise<T | null> {
-    return this.table.get(id) || null;
+    const entity = await this.table.get(id);
+    return entity || null;
   }
 
   /**
@@ -49,7 +50,8 @@ export abstract class DexieBaseRepository<T extends BaseEntity>
    * @returns Array of active entities
    */
   async findActive(): Promise<T[]> {
-    return this.table.where("deletedAt").equals(undefined).toArray();
+    // Use filter instead of equals for null check
+    return this.table.filter(item => item.deletedAt === undefined || item.deletedAt === null).toArray();
   }
 
   /**

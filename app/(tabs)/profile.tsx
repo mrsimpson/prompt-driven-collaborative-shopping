@@ -78,7 +78,7 @@ export default function ProfileScreen() {
 
   if (loading) {
     return (
-      <View style={[layout.container, layout.centered]}>
+      <View style={[layout.container, layout.center]}>
         <ActivityIndicator size="large" color={colors.primary} />
         <Text style={[typography.body, { marginTop: 16 }]}>
           Loading profile...
@@ -89,7 +89,7 @@ export default function ProfileScreen() {
 
   if (error) {
     return (
-      <View style={[layout.container, layout.centered]}>
+      <View style={[layout.container, layout.center]}>
         <Text
           style={[typography.body, { color: colors.danger, marginBottom: 16 }]}
         >

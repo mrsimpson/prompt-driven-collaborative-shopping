@@ -19,6 +19,9 @@ export const colors = {
   amber50: "#FEF3C7",
   amber500: "#F59E0B",
   amber900: "#92400E",
+  // Add missing color properties
+  text: "#111827", // Same as black for text color
+  textSecondary: "#4B5563", // Same as gray600 for secondary text
 };
 
 // Typography
@@ -60,6 +63,12 @@ export const typography = StyleSheet.create({
   },
   buttonText: {
     color: colors.white,
+    fontSize: 16,
+    fontWeight: "500",
+  },
+  // Add missing typography style
+  buttonTextSecondary: {
+    color: colors.primary,
     fontSize: 16,
     fontWeight: "500",
   },
@@ -143,6 +152,15 @@ export const buttons = StyleSheet.create({
   iconText: {
     flexDirection: "row",
     justifyContent: "center",
+    alignItems: "center",
+  },
+  // Add missing button style
+  secondary: {
+    backgroundColor: colors.white,
+    borderWidth: 1,
+    borderColor: colors.primary,
+    borderRadius: 6,
+    padding: 14,
     alignItems: "center",
   },
 });

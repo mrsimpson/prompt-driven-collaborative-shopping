@@ -42,17 +42,17 @@ export class DexieShoppingSessionRepository
    * @returns The active session or null if none exists
    */
   async findActiveByUser(userId: string): Promise<ShoppingSession | null> {
-    return (
-      this.table
-        .where("userId")
-        .equals(userId)
-        .and(
-          (session) =>
-            session.status === ShoppingSessionStatus.ACTIVE &&
-            session.deletedAt === undefined,
-        )
-        .first() || null
-    );
+    const session = await this.table
+      .where("userId")
+      .equals(userId)
+      .and(
+        (session) =>
+          session.status === ShoppingSessionStatus.ACTIVE &&
+          session.deletedAt === undefined,
+      )
+      .first();
+      
+    return session || null;
   }
 
   /**
