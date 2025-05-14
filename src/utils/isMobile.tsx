@@ -17,7 +17,6 @@ export const isMobile = () => {
   return windowWidth < 768; // Common breakpoint for mobile devices
 };
 
-
 // Helper function to detect if we're on mobile web
 export const isMobileWeb = () => {
   if (Platform.OS !== "web") return false;

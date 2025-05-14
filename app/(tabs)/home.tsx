@@ -36,7 +36,9 @@ export default function HomeScreen() {
     refreshLists,
   } = useShoppingLists();
   const { getListItemsCount } = useListItems();
-  const [recentLists, setRecentLists] = useState<ShoppingListWithItemCount[]>([]);
+  const [recentLists, setRecentLists] = useState<ShoppingListWithItemCount[]>(
+    [],
+  );
   const [loadingItemCounts, setLoadingItemCounts] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
 

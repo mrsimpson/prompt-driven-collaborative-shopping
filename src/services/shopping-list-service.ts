@@ -46,7 +46,10 @@ export interface ShoppingListService {
   updateListItem(params: UpdateListItemParams): Promise<Result<ListItem>>;
   removeItemFromList(itemId: string): Promise<Result<void>>;
   getListItems(listId: string): Promise<Result<ListItem[]>>;
-  reorderListItems(listId: string, itemIds: string[]): Promise<Result<ListItem[]>>;
+  reorderListItems(
+    listId: string,
+    itemIds: string[],
+  ): Promise<Result<ListItem[]>>;
 
   shareList(params: ShareListParams): Promise<Result<void>>;
   unshareList(listId: string, userId: string): Promise<Result<void>>;
@@ -594,7 +597,7 @@ export class LocalShoppingListService implements ShoppingListService {
       };
     }
   }
-  
+
   /**
    * Reorder items in a shopping list
    * @param listId List ID
@@ -603,7 +606,7 @@ export class LocalShoppingListService implements ShoppingListService {
    */
   async reorderListItems(
     listId: string,
-    itemIds: string[]
+    itemIds: string[],
   ): Promise<Result<ListItem[]>> {
     try {
       // Check if the list exists
@@ -614,39 +617,48 @@ export class LocalShoppingListService implements ShoppingListService {
 
       // Check if the list is locked
       if (list.isLocked) {
-        return { success: false, error: "Cannot reorder items in a locked list" };
+        return {
+          success: false,
+          error: "Cannot reorder items in a locked list",
+        };
       }
 
       // Get all items in the list
       const items = await this.itemRepository.findByList(listId);
-      
+
       // Create a map of items by ID for quick lookup
       const itemMap = new Map<string, ListItem>();
-      items.forEach(item => itemMap.set(item.id, item));
-      
+      items.forEach((item) => itemMap.set(item.id, item));
+
       // Validate that all itemIds exist in the list
       for (const itemId of itemIds) {
         if (!itemMap.has(itemId)) {
-          return { success: false, error: `Item with ID ${itemId} not found in list` };
+          return {
+            success: false,
+            error: `Item with ID ${itemId} not found in list`,
+          };
         }
       }
-      
+
       // Update sort order for each item based on its position in the itemIds array
       const updatePromises = itemIds.map((itemId, index) => {
         const sortOrder = (index + 1) * 1000; // Use 1000 as increment for easy future reordering
         return this.itemRepository.update(itemId, { sortOrder });
       });
-      
+
       await Promise.all(updatePromises);
-      
+
       // Fetch the updated items
       const updatedItems = await this.itemRepository.findByList(listId);
-      
+
       return { success: true, data: updatedItems };
     } catch (error) {
       return {
         success: false,
-        error: error instanceof Error ? error.message : "Failed to reorder list items",
+        error:
+          error instanceof Error
+            ? error.message
+            : "Failed to reorder list items",
       };
     }
   }

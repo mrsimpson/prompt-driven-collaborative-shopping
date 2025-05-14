@@ -1,5 +1,12 @@
 import React, { useState, useEffect } from "react";
-import { View, Text, FlatList, TouchableOpacity, ActivityIndicator, StyleSheet } from "react-native";
+import {
+  View,
+  Text,
+  FlatList,
+  TouchableOpacity,
+  ActivityIndicator,
+  StyleSheet,
+} from "react-native";
 import { router } from "expo-router";
 import { ShoppingCart } from "lucide-react-native";
 import { HeaderWithBack } from "@/src/components/HeaderWithBack";
@@ -53,26 +60,35 @@ const styles = StyleSheet.create({
 });
 
 export default function ShoppingModeScreen() {
-  const { lists, loading: listsLoading, error: listsError, refreshLists } = useShoppingLists();
+  const {
+    lists,
+    loading: listsLoading,
+    error: listsError,
+    refreshLists,
+  } = useShoppingLists();
   const { getItemsForList } = useListItems();
   const [selectedLists, setSelectedLists] = useState<Set<string>>(new Set());
-  const [listItemCounts, setListItemCounts] = useState<Record<string, number>>({});
+  const [listItemCounts, setListItemCounts] = useState<Record<string, number>>(
+    {},
+  );
   const [loadingCounts, setLoadingCounts] = useState(true);
 
   // Load item counts for each list
   useEffect(() => {
     const fetchItemCounts = async () => {
       if (lists.length === 0) return;
-      
+
       setLoadingCounts(true);
       const counts: Record<string, number> = {};
-      
+
       try {
         for (const list of lists) {
           const result = await getItemsForList(list.id);
           if (result.success) {
             // Only count non-purchased items
-            counts[list.id] = result.data.filter(item => !item.isPurchased).length;
+            counts[list.id] = result.data.filter(
+              (item) => !item.isPurchased,
+            ).length;
           }
         }
         setListItemCounts(counts);
@@ -82,12 +98,12 @@ export default function ShoppingModeScreen() {
         setLoadingCounts(false);
       }
     };
-    
+
     fetchItemCounts();
   }, [lists, getItemsForList]);
 
   const toggleListSelection = (id: string) => {
-    setSelectedLists(prev => {
+    setSelectedLists((prev) => {
       const newSelection = new Set(prev);
       if (newSelection.has(id)) {
         newSelection.delete(id);
@@ -102,14 +118,14 @@ export default function ShoppingModeScreen() {
     if (selectedLists.size === 0) {
       CrossPlatformAlert.show(
         "No Lists Selected",
-        "Please select at least one list to shop with."
+        "Please select at least one list to shop with.",
       );
       return;
     }
 
     // Check if any selected list has no items
     const emptyLists = Array.from(selectedLists).filter(
-      listId => listItemCounts[listId] === 0
+      (listId) => listItemCounts[listId] === 0,
     );
 
     if (emptyLists.length > 0) {
@@ -127,7 +143,7 @@ export default function ShoppingModeScreen() {
             text: "Continue",
             onPress: () => navigateToShoppingSession(),
           },
-        ]
+        ],
       );
     } else {
       // If all lists have items, proceed directly
