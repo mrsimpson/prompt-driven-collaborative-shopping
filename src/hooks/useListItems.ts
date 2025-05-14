@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import { ListItem } from "../types/models";
 import { ServiceFactory } from "../services";
 import { safeParseListItem, safeParseListItems } from "../utils/schemas";
-import { ServiceResult } from "../types/operations";
+import { Result as ServiceResult } from "../types/operations";
 
 export function useListItems(listId?: string) {
   const [items, setItems] = useState<ListItem[]>([]);

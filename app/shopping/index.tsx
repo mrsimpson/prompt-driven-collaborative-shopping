@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { View, Text, FlatList, TouchableOpacity, ActivityIndicator } from "react-native";
+import { View, Text, FlatList, TouchableOpacity, ActivityIndicator, StyleSheet } from "react-native";
 import { router } from "expo-router";
 import { ShoppingCart } from "lucide-react-native";
 import { HeaderWithBack } from "@/src/components/HeaderWithBack";
@@ -13,8 +13,9 @@ import {
 } from "@/src/styles/common";
 import { useShoppingLists, useListItems } from "@/src/hooks";
 import { CrossPlatformAlert } from "@/src/components/CrossPlatformAlert";
+import { ShoppingList } from "@/src/types/models";
 
-const styles = {
+const styles = StyleSheet.create({
   listInfo: {
     flex: 1,
   },
@@ -46,10 +47,10 @@ const styles = {
   emptyStateText: {
     fontSize: 16,
     color: colors.gray500,
-    textAlign: "center",
+    textAlign: "center" as const,
     marginBottom: 20,
   },
-};
+});
 
 export default function ShoppingModeScreen() {
   const { lists, loading: listsLoading, error: listsError, refreshLists } = useShoppingLists();
@@ -120,6 +121,7 @@ export default function ShoppingModeScreen() {
           {
             text: "Cancel",
             style: "cancel",
+            onPress: () => {}, // Empty function to satisfy TypeScript
           },
           {
             text: "Continue",
@@ -167,7 +169,8 @@ export default function ShoppingModeScreen() {
         ) : lists.length === 0 ? (
           <View style={styles.emptyState}>
             <Text style={styles.emptyStateText}>
-              You don't have any shopping lists yet. Create a list to start shopping.
+              You don&apos;t have any shopping lists yet. Create a list to start
+              shopping.
             </Text>
             <TouchableOpacity
               style={buttons.primary}
@@ -179,10 +182,13 @@ export default function ShoppingModeScreen() {
         ) : (
           <FlatList
             data={lists}
-            keyExtractor={(item) => item.id}
+            keyExtractor={(item: ShoppingList) => item.id}
             renderItem={({ item }) => (
               <TouchableOpacity
-                style={[cards.basic, selectedLists.has(item.id) && cards.selected]}
+                style={[
+                  cards.basic,
+                  selectedLists.has(item.id) && cards.selected,
+                ]}
                 onPress={() => toggleListSelection(item.id)}
               >
                 <View style={layout.spaceBetween}>
@@ -207,7 +213,9 @@ export default function ShoppingModeScreen() {
                   <View
                     style={[
                       checkboxes.base,
-                      selectedLists.has(item.id) ? checkboxes.checked : checkboxes.unchecked,
+                      selectedLists.has(item.id)
+                        ? checkboxes.checked
+                        : checkboxes.unchecked,
                     ]}
                   />
                 </View>
