@@ -86,7 +86,7 @@ This document outlines the step-by-step implementation plan for the collaborativ
   - [x] Wire up list management screens to services
   - [x] Connect shopping mode to services
   - [x] Implement local user management
-  - [ ] Wire up home screen
+  - [x] Wire up home screen
   - 
 
 - [x] **3.4 Add Offline Capabilities**
