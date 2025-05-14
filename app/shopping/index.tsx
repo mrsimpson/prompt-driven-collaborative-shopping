@@ -84,7 +84,7 @@ export default function ShoppingModeScreen() {
       try {
         for (const list of lists) {
           const result = await getItemsForList(list.id);
-          if (result.success) {
+          if (result.success && result.data) {
             // Only count non-purchased items
             counts[list.id] = result.data.filter(
               (item) => !item.isPurchased,
