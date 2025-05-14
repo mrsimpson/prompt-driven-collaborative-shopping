@@ -98,8 +98,9 @@ This document outlines the step-by-step implementation plan for the collaborativ
   - [x] Checkout with creation of new lists
   - [x] Drag and drop re-ordering
   - [x] Editing of items
-  - [ ] Improve navigation efficiency
-  - [ ] Better shopping experience for multiple lists
+  - [x] Improve navigation efficiency
+  - [x] Better shopping experience for multiple lists
+  - [ ] Edit and delete shopping lists
 
 ## Phase 4: State Management
 
