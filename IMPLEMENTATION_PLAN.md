@@ -79,7 +79,7 @@ This document outlines the step-by-step implementation plan for the collaborativ
   - [x] Improve header components with centered titles
   - [x] Create reusable UI components
 
-- [ ] **3.3 Connect UI to Local Storage**
+- [x] **3.3 Connect UI to Local Storage**
 
   - [x] Create custom hooks for service layer access
   - [x] Implement app initialization flow
@@ -87,7 +87,6 @@ This document outlines the step-by-step implementation plan for the collaborativ
   - [x] Connect shopping mode to services
   - [x] Implement local user management
   - [x] Wire up home screen
-  -
 
 - [x] **3.4 Add Offline Capabilities**
 
@@ -98,7 +97,9 @@ This document outlines the step-by-step implementation plan for the collaborativ
 - [ ] **3.5 Basic usability**
   - [x] Checkout with creation of new lists
   - [x] Drag and drop re-ordering
-  - [ ] Editing of items
+  - [x] Editing of items
+  - [ ] Improve navigation efficiency
+  - [ ] Better shopping experience for multiple lists
 
 ## Phase 4: State Management
 
