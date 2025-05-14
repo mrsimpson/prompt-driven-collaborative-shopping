@@ -51,7 +51,7 @@ export class DexieShoppingSessionRepository
           session.deletedAt === undefined,
       )
       .first();
-      
+
     return session || null;
   }
 

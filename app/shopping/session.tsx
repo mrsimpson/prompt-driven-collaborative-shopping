@@ -6,8 +6,6 @@ import {
   FlatList,
   TouchableOpacity,
   ActivityIndicator,
-  Platform,
-  Dimensions,
 } from "react-native";
 import { router, useLocalSearchParams, useNavigation } from "expo-router";
 import { ShoppingBag } from "lucide-react-native";

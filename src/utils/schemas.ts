@@ -7,12 +7,12 @@ import { ShoppingSessionStatus, ListItem, ShoppingList } from "../types/models";
 const dateParser = (val: unknown): Date | undefined => {
   if (val instanceof Date) return val;
   if (val === null || val === undefined) return undefined;
-  
-  if (typeof val === 'string' || typeof val === 'number') {
+
+  if (typeof val === "string" || typeof val === "number") {
     const date = new Date(val);
     if (!isNaN(date.getTime())) return date;
   }
-  
+
   return undefined;
 };
 
@@ -29,7 +29,7 @@ export const baseEntitySchema = z.object({
   createdAt: z.preprocess(dateParser, z.date()),
   updatedAt: z.preprocess(dateParser, z.date()),
   deletedAt: flexibleDate,
-  lastModifiedAt: z.preprocess(dateParser, z.date())
+  lastModifiedAt: z.preprocess(dateParser, z.date()),
 });
 
 /**
@@ -43,7 +43,7 @@ export const listItemSchema = baseEntitySchema.extend({
   isPurchased: z.boolean(),
   purchasedBy: z.string().optional(),
   purchasedAt: flexibleDate,
-  sortOrder: z.number()
+  sortOrder: z.number(),
 });
 
 /**
@@ -55,7 +55,7 @@ export const shoppingListSchema = baseEntitySchema.extend({
   createdBy: z.string(),
   communityId: z.string().optional(),
   isShared: z.boolean(),
-  isLocked: z.boolean()
+  isLocked: z.boolean(),
 });
 
 /**
@@ -63,7 +63,7 @@ export const shoppingListSchema = baseEntitySchema.extend({
  */
 export const userSchema = baseEntitySchema.extend({
   username: z.string(),
-  email: z.string().email()
+  email: z.string().email(),
 });
 
 /**
@@ -73,7 +73,7 @@ export const shoppingSessionSchema = baseEntitySchema.extend({
   userId: z.string(),
   startedAt: z.preprocess(dateParser, z.date()),
   endedAt: flexibleDate,
-  status: z.nativeEnum(ShoppingSessionStatus)
+  status: z.nativeEnum(ShoppingSessionStatus),
 });
 
 /**
@@ -82,7 +82,7 @@ export const shoppingSessionSchema = baseEntitySchema.extend({
 export const sessionListSchema = baseEntitySchema.extend({
   sessionId: z.string(),
   listId: z.string(),
-  addedAt: z.preprocess(dateParser, z.date())
+  addedAt: z.preprocess(dateParser, z.date()),
 });
 
 /**
@@ -117,9 +117,9 @@ export function safeParseListItems(data: unknown): ListItem[] {
     console.warn("Expected array of ListItems but got:", data);
     return [];
   }
-  
+
   return data
-    .map(item => {
+    .map((item) => {
       const result = listItemSchema.safeParse(item);
       if (!result.success) {
         console.warn("Invalid ListItem in array:", result.error);
@@ -135,9 +135,9 @@ export function safeParseShoppingLists(data: unknown): ShoppingList[] {
     console.warn("Expected array of ShoppingLists but got:", data);
     return [];
   }
-  
+
   return data
-    .map(list => {
+    .map((list) => {
       const result = shoppingListSchema.safeParse(list);
       if (!result.success) {
         console.warn("Invalid ShoppingList in array:", result.error);

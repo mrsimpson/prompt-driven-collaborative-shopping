@@ -54,7 +54,7 @@ export abstract class DexieBaseRepository<T extends BaseEntity>
     // This leverages database indexes instead of loading all records into memory
     // We need to use type assertions to satisfy TypeScript's type checking
     return this.table
-      .where('deletedAt')
+      .where("deletedAt")
       .anyOf([null, undefined] as any[])
       .toArray();
   }

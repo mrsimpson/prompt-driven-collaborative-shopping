@@ -121,7 +121,7 @@ export function useShoppingSession(sessionId?: string) {
         if (!newSession) {
           throw new Error("Failed to create shopping session");
         }
-        
+
         setSession(newSession);
 
         // Get the lists for this session
@@ -195,7 +195,9 @@ export function useShoppingSession(sessionId?: string) {
 
         // Update local state
         setItems((prevItems) =>
-          prevItems.map((i) => (i.id === itemId ? result.data : i)).filter((i): i is ListItem => i !== undefined),
+          prevItems
+            .map((i) => (i.id === itemId ? result.data : i))
+            .filter((i): i is ListItem => i !== undefined),
         );
 
         return result.data;

@@ -1,7 +1,10 @@
 import { useCallback, useEffect, useState } from "react";
 import { ShoppingList } from "../types/models";
 import { ServiceFactory } from "../services";
-import { safeParseShoppingList, safeParseShoppingLists } from "../utils/schemas";
+import {
+  safeParseShoppingList,
+  safeParseShoppingLists,
+} from "../utils/schemas";
 
 export function useShoppingLists() {
   const [lists, setLists] = useState<ShoppingList[]>([]);
@@ -65,9 +68,9 @@ export function useShoppingLists() {
         // Parse and validate the returned list
         const validList = safeParseShoppingList(result.data);
         if (validList) {
-          setLists(prevLists => [...prevLists, validList]);
+          setLists((prevLists) => [...prevLists, validList]);
         }
-        
+
         return result.data;
       } catch (err) {
         setError(
@@ -89,13 +92,13 @@ export function useShoppingLists() {
         setError(null);
         // Add the default user ID as required by the service
         const defaultUserId = "default-user-id";
-        
+
         const result = await shoppingListService.updateList(
           {
             id: listId,
             ...updates,
           },
-          defaultUserId
+          defaultUserId,
         );
 
         if (!result.success) {
@@ -104,8 +107,8 @@ export function useShoppingLists() {
 
         // Parse and validate the returned list
         const validList = safeParseShoppingList(result.data);
-        setLists(prevLists => {
-          return prevLists.map(list => {
+        setLists((prevLists) => {
+          return prevLists.map((list) => {
             if (list.id === listId && validList) {
               return validList;
             }
@@ -134,14 +137,17 @@ export function useShoppingLists() {
         setError(null);
         // Add the default user ID as required by the service
         const defaultUserId = "default-user-id";
-        
-        const result = await shoppingListService.deleteList(listId, defaultUserId);
+
+        const result = await shoppingListService.deleteList(
+          listId,
+          defaultUserId,
+        );
 
         if (!result.success) {
           throw new Error(result.error);
         }
 
-        setLists(prevLists => prevLists.filter(list => list.id !== listId));
+        setLists((prevLists) => prevLists.filter((list) => list.id !== listId));
       } catch (err) {
         setError(
           err instanceof Error

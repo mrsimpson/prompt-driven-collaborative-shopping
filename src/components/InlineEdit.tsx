@@ -1,14 +1,14 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { 
-  Text, 
-  TextInput, 
-  TouchableOpacity, 
-  StyleSheet, 
-  TextStyle, 
+import React, { useState, useRef, useEffect } from "react";
+import {
+  Text,
+  TextInput,
+  TouchableOpacity,
+  StyleSheet,
+  TextStyle,
   ViewStyle,
-  KeyboardTypeOptions
-} from 'react-native';
-import { colors } from '@/src/styles/common';
+  KeyboardTypeOptions,
+} from "react-native";
+import { colors } from "@/src/styles/common";
 
 interface InlineEditProps {
   value: string;
@@ -27,12 +27,12 @@ interface InlineEditProps {
 export const InlineEdit: React.FC<InlineEditProps> = ({
   value,
   onSave,
-  placeholder = '',
+  placeholder = "",
   isEditing,
   setIsEditing,
   textStyle = {},
   inputStyle = {},
-  keyboardType = 'default',
+  keyboardType = "default",
   autoFocus = true,
   validate,
   onSubmitEditing,
@@ -57,12 +57,12 @@ export const InlineEdit: React.FC<InlineEditProps> = ({
   const handleSave = () => {
     if (validate) {
       const validationResult = validate(editValue);
-      if (validationResult !== true && typeof validationResult === 'string') {
+      if (validationResult !== true && typeof validationResult === "string") {
         // Handle validation error
         return;
       }
     }
-    
+
     // Immediately save the current value
     onSave(editValue);
   };
@@ -74,7 +74,7 @@ export const InlineEdit: React.FC<InlineEditProps> = ({
   const handleSubmitEditing = () => {
     // Make sure we save before calling onSubmitEditing
     handleSave();
-    
+
     // Then call onSubmitEditing if provided, passing the current value
     if (onSubmitEditing) {
       // Pass the current value directly to ensure it's up to date

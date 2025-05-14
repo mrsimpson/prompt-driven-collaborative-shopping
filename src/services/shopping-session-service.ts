@@ -387,7 +387,7 @@ export class LocalShoppingSessionService implements ShoppingSessionService {
     try {
       // Get all lists in the session
       const listIds = await this.sessionRepository.getSessionLists(sessionId);
-      
+
       // Get the user's ID from the session
       const session = await this.sessionRepository.findById(sessionId);
       if (!session) {
@@ -396,29 +396,37 @@ export class LocalShoppingSessionService implements ShoppingSessionService {
 
       // Reorder listIds to prioritize user's own lists first
       const lists = await Promise.all(
-        listIds.map(id => this.listRepository.findById(id))
+        listIds.map((id) => this.listRepository.findById(id)),
       );
       const orderedListIds = [...listIds].sort((a, b) => {
-        const listA = lists.find(l => l?.id === a);
-        const listB = lists.find(l => l?.id === b);
+        const listA = lists.find((l) => l?.id === a);
+        const listB = lists.find((l) => l?.id === b);
         // User's own lists come first
-        if (listA?.createdBy === session.userId && listB?.createdBy !== session.userId) return -1;
-        if (listA?.createdBy !== session.userId && listB?.createdBy === session.userId) return 1;
+        if (
+          listA?.createdBy === session.userId &&
+          listB?.createdBy !== session.userId
+        )
+          return -1;
+        if (
+          listA?.createdBy !== session.userId &&
+          listB?.createdBy === session.userId
+        )
+          return 1;
         return 0;
       });
 
       // Get all items from these lists
       const allItems = await this.itemRepository.findByLists(orderedListIds);
-      
+
       // Create a map to track processed items by their normalized name
       const processedItems = new Map<string, Set<string>>();
-      
+
       // Create a map to store the order of first appearance for each unique item
       const itemOrders = new Map<string, number>();
-      
+
       // Final array of consolidated items
       const consolidatedItems: any[] = [];
-      
+
       // Counter for assigning order to unique items
       let orderCounter = 0;
 
@@ -426,13 +434,13 @@ export class LocalShoppingSessionService implements ShoppingSessionService {
       for (const listId of orderedListIds) {
         // Get items for this list, sorted by their original order
         const listItems = allItems
-          .filter(item => item.listId === listId)
+          .filter((item) => item.listId === listId)
           .sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0));
 
         for (const item of listItems) {
           // Normalize item name for comparison
           const normalizedName = `${item.name.toLowerCase()}_${item.unit.toLowerCase()}`;
-          
+
           // Skip if we've already processed this item from this list
           if (processedItems.get(normalizedName)?.has(listId)) {
             continue;
@@ -449,17 +457,24 @@ export class LocalShoppingSessionService implements ShoppingSessionService {
           processedItems.get(normalizedName)!.add(listId);
 
           // Find all instances of this item across all lists
-          const sameItems = allItems.filter(otherItem => 
-            `${otherItem.name.toLowerCase()}_${otherItem.unit.toLowerCase()}` === normalizedName
+          const sameItems = allItems.filter(
+            (otherItem) =>
+              `${otherItem.name.toLowerCase()}_${otherItem.unit.toLowerCase()}` ===
+              normalizedName,
           );
 
           // Calculate total quantity and check if any instance is purchased
-          const totalQuantity = sameItems.reduce((sum, i) => sum + i.quantity, 0);
-          const anyPurchased = sameItems.some(i => i.isPurchased);
+          const totalQuantity = sameItems.reduce(
+            (sum, i) => sum + i.quantity,
+            0,
+          );
+          const anyPurchased = sameItems.some((i) => i.isPurchased);
 
           // Create or update consolidated item
           const existingItemIndex = consolidatedItems.findIndex(
-            ci => `${ci.name.toLowerCase()}_${ci.unit.toLowerCase()}` === normalizedName
+            (ci) =>
+              `${ci.name.toLowerCase()}_${ci.unit.toLowerCase()}` ===
+              normalizedName,
           );
 
           if (existingItemIndex === -1) {
@@ -472,12 +487,12 @@ export class LocalShoppingSessionService implements ShoppingSessionService {
               isPurchased: anyPurchased,
               order: itemOrders.get(normalizedName)!,
               listId: item.listId, // Keep the listId of the first occurrence
-              sources: sameItems.map(i => ({
+              sources: sameItems.map((i) => ({
                 listId: i.listId,
                 itemId: i.id,
                 quantity: i.quantity,
-                isPurchased: i.isPurchased
-              }))
+                isPurchased: i.isPurchased,
+              })),
             });
           }
         }
@@ -490,7 +505,10 @@ export class LocalShoppingSessionService implements ShoppingSessionService {
     } catch (error) {
       return {
         success: false,
-        error: error instanceof Error ? error.message : "Failed to get consolidated items"
+        error:
+          error instanceof Error
+            ? error.message
+            : "Failed to get consolidated items",
       };
     }
   }

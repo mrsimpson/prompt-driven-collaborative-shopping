@@ -61,7 +61,7 @@ export default function ListsScreen() {
         <View style={headers.titleContainer}>
           <Text style={typography.title}>My Shopping Lists</Text>
         </View>
-        <TouchableOpacity 
+        <TouchableOpacity
           style={buttons.icon}
           onPress={() => router.push("/lists/new")}
         >
@@ -74,7 +74,7 @@ export default function ListsScreen() {
           <Text style={typography.body}>
             You don&apos;t have any shopping lists yet.
           </Text>
-          <TouchableOpacity 
+          <TouchableOpacity
             style={[buttons.primary, { marginTop: 16 }]}
             onPress={() => router.push("/lists/new")}
           >
@@ -86,7 +86,7 @@ export default function ListsScreen() {
           data={shoppingLists}
           keyExtractor={(item) => item.id}
           renderItem={({ item }) => (
-            <TouchableOpacity 
+            <TouchableOpacity
               style={lists.item}
               onPress={() => router.push(`/lists/${item.id}`)}
             >

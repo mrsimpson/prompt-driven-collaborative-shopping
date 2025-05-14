@@ -29,7 +29,7 @@ export function useUser() {
       // In local mode or when authenticated, get the current user
       if (isLocalMode || isAuthenticated) {
         const currentUserResult = await userService.getCurrentUser();
-        
+
         if (currentUserResult.success) {
           // Explicitly handle the null case and ensure data is defined
           if (currentUserResult.data === null) {

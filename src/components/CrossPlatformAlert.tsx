@@ -1,4 +1,4 @@
-import React, { useRef, useEffect } from "react";
+import React from "react";
 import { Alert, Platform } from "react-native";
 import { WebAlert } from "./WebAlert";
 
@@ -70,7 +70,7 @@ export const CrossPlatformAlert = {
             root.unmount();
             alertRoots.delete(alertId);
           }
-          
+
           // Remove the DOM element
           const element = document.getElementById(alertId);
           if (element) {

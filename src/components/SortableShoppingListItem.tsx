@@ -1,8 +1,8 @@
-import React from 'react';
-import { useSortable } from '@dnd-kit/sortable';
-import { CSS } from '@dnd-kit/utilities';
-import { ShoppingListItem } from './ShoppingListItem';
-import { ListItem } from '@/src/types/models';
+import React from "react";
+import { useSortable } from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
+import { ShoppingListItem } from "./ShoppingListItem";
+import { ListItem } from "@/src/types/models";
 
 interface SortableListItemProps {
   item: ListItem;

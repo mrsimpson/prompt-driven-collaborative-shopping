@@ -111,7 +111,7 @@ export class DexieListItemRepository
    */
   async reorderItems(listId: string, itemIds: string[]): Promise<void> {
     // Start a transaction to ensure all updates are atomic
-    await db.transaction('rw', db.listItems, async () => {
+    await db.transaction("rw", db.listItems, async () => {
       // Update each item with its new sort order (1000 increment to allow for future insertions)
       for (let i = 0; i < itemIds.length; i++) {
         const itemId = itemIds[i];

@@ -1,21 +1,21 @@
-import React, { useState } from 'react';
-import { View, StyleSheet } from 'react-native';
-import { 
-  DndContext, 
+import React, { useState } from "react";
+import { View, StyleSheet } from "react-native";
+import {
+  DndContext,
   closestCenter,
   TouchSensor,
   PointerSensor,
-  useSensor, 
+  useSensor,
   useSensors,
   DragEndEvent,
   DragStartEvent,
-} from '@dnd-kit/core';
+} from "@dnd-kit/core";
 import {
   arrayMove,
   SortableContext,
   verticalListSortingStrategy,
-} from '@dnd-kit/sortable';
-import { restrictToVerticalAxis } from '@dnd-kit/modifiers';
+} from "@dnd-kit/sortable";
+import { restrictToVerticalAxis } from "@dnd-kit/modifiers";
 
 interface SortableListProps<T> {
   items: T[];
@@ -41,14 +41,14 @@ export function SortableList<T>({
       activationConstraint: {
         delay: 150,
         tolerance: 8,
-      }
+      },
     }),
     // Pointer sensor as fallback for desktop/web
     useSensor(PointerSensor, {
       activationConstraint: {
         distance: 8,
-      }
-    })
+      },
+    }),
   );
 
   const handleDragStart = (event: DragStartEvent) => {
@@ -57,20 +57,24 @@ export function SortableList<T>({
 
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
-    
+
     if (over && active.id !== over.id) {
-      const oldIndex = items.findIndex(item => keyExtractor(item) === active.id);
-      const newIndex = items.findIndex(item => keyExtractor(item) === over.id);
-      
+      const oldIndex = items.findIndex(
+        (item) => keyExtractor(item) === active.id,
+      );
+      const newIndex = items.findIndex(
+        (item) => keyExtractor(item) === over.id,
+      );
+
       if (oldIndex !== -1 && newIndex !== -1) {
         const newItems = arrayMove(items, oldIndex, newIndex);
-        
+
         if (onReorder) {
           onReorder(newItems);
         }
       }
     }
-    
+
     setActiveId(null);
   };
 
