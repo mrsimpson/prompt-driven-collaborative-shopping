@@ -3,7 +3,7 @@ import { ListItem } from "../types/models";
 import { ServiceFactory } from "../services";
 import { safeParseListItem, safeParseListItems } from "../utils/schemas";
 
-export function useListItems(listId: string) {
+export function useListItems(listId?: string) {
   const [items, setItems] = useState<ListItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
@@ -11,6 +11,8 @@ export function useListItems(listId: string) {
 
   // Fetch list items
   const fetchItems = useCallback(async () => {
+    if (!listId) return;
+    
     try {
       setLoading(true);
       setError(null);
@@ -35,12 +37,18 @@ export function useListItems(listId: string) {
 
   // Load items on mount
   useEffect(() => {
-    fetchItems();
-  }, [fetchItems]);
+    if (listId) {
+      fetchItems();
+    }
+  }, [fetchItems, listId]);
 
   // Add a new item to the list
   const addItem = useCallback(
     async (item: Omit<ListItem, "id" | "listId" | "createdAt" | "updatedAt" | "lastModifiedAt" | "sortOrder">) => {
+      if (!listId) {
+        throw new Error("List ID is required to add an item");
+      }
+      
       try {
         setError(null);
         const result = await shoppingListService.addItemToList({
@@ -72,6 +80,10 @@ export function useListItems(listId: string) {
 
   const updateItem = useCallback(
     async (itemId: string, updates: Partial<ListItem>) => {
+      if (!listId) {
+        throw new Error("List ID is required to update an item");
+      }
+      
       try {
         setError(null);
         const result = await shoppingListService.updateListItem({
@@ -133,6 +145,10 @@ export function useListItems(listId: string) {
 
   const reorderItems = useCallback(
     async (itemIds: string[]) => {
+      if (!listId) {
+        throw new Error("List ID is required to reorder items");
+      }
+      
       try {
         setError(null);
         // Check if the service has the reorderListItems method
@@ -166,6 +182,10 @@ export function useListItems(listId: string) {
 
   const markItemAsPurchased = useCallback(
     async (itemId: string, isPurchased: boolean) => {
+      if (!listId) {
+        throw new Error("List ID is required to mark an item as purchased");
+      }
+      
       try {
         setError(null);
         const result = await shoppingListService.updateListItem({
@@ -207,6 +227,23 @@ export function useListItems(listId: string) {
     [listId, shoppingListService],
   );
 
+  // Get the count of items in a list
+  const getListItemsCount = useCallback(
+    async (specificListId: string): Promise<number> => {
+      try {
+        const result = await shoppingListService.getListItems(specificListId);
+        if (result.success && result.data) {
+          return result.data.length;
+        }
+        return 0;
+      } catch (error) {
+        console.error(`Error getting item count for list ${specificListId}:`, error);
+        return 0;
+      }
+    },
+    [shoppingListService]
+  );
+
   return {
     items,
     loading,
@@ -217,5 +254,6 @@ export function useListItems(listId: string) {
     removeItem,
     reorderItems,
     markItemAsPurchased,
+    getListItemsCount,
   };
 }

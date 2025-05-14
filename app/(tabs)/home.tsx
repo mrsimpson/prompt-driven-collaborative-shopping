@@ -1,28 +1,80 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import {
   StyleSheet,
   Text,
   View,
   ScrollView,
   TouchableOpacity,
+  ActivityIndicator,
+  RefreshControl,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Link } from "expo-router";
-import { ShoppingCart, ListPlus, ShoppingBag } from "lucide-react-native";
+import { ShoppingCart, ListPlus, ShoppingBag, AlertCircle } from "lucide-react-native";
 import { useAuth } from "@/src/contexts/AuthContext";
+import { useShoppingLists } from "@/src/hooks/useShoppingLists";
+import { useListItems } from "@/src/hooks/useListItems";
+import { ShoppingList } from "@/src/types/models";
 
-// Mock data - will be replaced with actual data from Dexie.js
-const MOCK_LISTS = [
-  { id: "1", name: "Grocery List", itemCount: 5 },
-  { id: "2", name: "Hardware Store", itemCount: 3 },
-];
+// Maximum number of recent lists to show on the home screen
+const MAX_RECENT_LISTS = 3;
 
 export default function HomeScreen() {
   const { isLocalMode } = useAuth();
+  const { lists, loading: listsLoading, error: listsError, refreshLists } = useShoppingLists();
+  const { getListItemsCount } = useListItems();
+  const [recentLists, setRecentLists] = useState<ShoppingList & { itemCount: number }[]>([]);
+  const [loadingItemCounts, setLoadingItemCounts] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
+
+  // Load item counts for each list
+  useEffect(() => {
+    const loadItemCounts = async () => {
+      if (lists.length === 0) return;
+      
+      setLoadingItemCounts(true);
+      try {
+        const listsWithCounts = await Promise.all(
+          // Sort by last modified date and take only the most recent ones
+          [...lists]
+            .sort((a, b) => {
+              const dateA = a.lastModifiedAt ? new Date(a.lastModifiedAt).getTime() : 0;
+              const dateB = b.lastModifiedAt ? new Date(b.lastModifiedAt).getTime() : 0;
+              return dateB - dateA; // Most recent first
+            })
+            .slice(0, MAX_RECENT_LISTS)
+            .map(async (list) => {
+              const count = await getListItemsCount(list.id);
+              return { ...list, itemCount: count };
+            })
+        );
+        
+        setRecentLists(listsWithCounts);
+      } catch (error) {
+        console.error("Error loading item counts:", error);
+      } finally {
+        setLoadingItemCounts(false);
+      }
+    };
+
+    loadItemCounts();
+  }, [lists, getListItemsCount]);
+
+  // Pull to refresh handler
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    await refreshLists();
+    setRefreshing(false);
+  };
 
   return (
     <SafeAreaView style={styles.container} edges={["bottom"]}>
-      <ScrollView contentContainerStyle={styles.scrollContent}>
+      <ScrollView 
+        contentContainerStyle={styles.scrollContent}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />
+        }
+      >
         <View style={styles.section}>
           <Text style={styles.heading}>Shopping Companion</Text>
           <Text style={styles.subheading}>
@@ -77,21 +129,52 @@ export default function HomeScreen() {
             </Link>
           </View>
 
-          {MOCK_LISTS.map((list) => (
-            <Link key={list.id} href={`/lists/${list.id}`} asChild>
-              <TouchableOpacity style={styles.listItem}>
-                <ShoppingCart
-                  size={20}
-                  color="#6B7280"
-                  style={styles.listIcon}
-                />
-                <View style={styles.listInfo}>
-                  <Text style={styles.listName}>{list.name}</Text>
-                  <Text style={styles.listCount}>{list.itemCount} items</Text>
-                </View>
+          {listsLoading || loadingItemCounts ? (
+            <View style={styles.loadingContainer}>
+              <ActivityIndicator size="large" color="#3B82F6" />
+              <Text style={styles.loadingText}>Loading lists...</Text>
+            </View>
+          ) : listsError ? (
+            <View style={styles.errorContainer}>
+              <AlertCircle size={24} color="#EF4444" />
+              <Text style={styles.errorText}>
+                Error loading lists. Please try again.
+              </Text>
+              <TouchableOpacity 
+                style={styles.retryButton}
+                onPress={handleRefresh}
+              >
+                <Text style={styles.retryButtonText}>Retry</Text>
               </TouchableOpacity>
-            </Link>
-          ))}
+            </View>
+          ) : recentLists.length === 0 ? (
+            <View style={styles.emptyContainer}>
+              <Text style={styles.emptyText}>
+                You don&apos;t have any shopping lists yet.
+              </Text>
+              <Link href="/lists/new" asChild>
+                <TouchableOpacity style={styles.createListButton}>
+                  <Text style={styles.createListButtonText}>Create Your First List</Text>
+                </TouchableOpacity>
+              </Link>
+            </View>
+          ) : (
+            recentLists.map((list) => (
+              <Link key={list.id} href={`/lists/${list.id}`} asChild>
+                <TouchableOpacity style={styles.listItem}>
+                  <ShoppingCart
+                    size={20}
+                    color="#6B7280"
+                    style={styles.listIcon}
+                  />
+                  <View style={styles.listInfo}>
+                    <Text style={styles.listName}>{list.name}</Text>
+                    <Text style={styles.listCount}>{list.itemCount} items</Text>
+                  </View>
+                </TouchableOpacity>
+              </Link>
+            ))
+          )}
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -213,5 +296,72 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: "#6B7280",
     marginTop: 2,
+  },
+  loadingContainer: {
+    padding: 24,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#FFFFFF",
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: "#E5E7EB",
+  },
+  loadingText: {
+    marginTop: 12,
+    fontSize: 14,
+    color: "#6B7280",
+  },
+  errorContainer: {
+    padding: 24,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#FEF2F2",
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: "#EF4444",
+  },
+  errorText: {
+    marginTop: 12,
+    marginBottom: 16,
+    fontSize: 14,
+    color: "#B91C1C",
+    textAlign: "center",
+  },
+  retryButton: {
+    backgroundColor: "#EF4444",
+    borderRadius: 6,
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+  },
+  retryButtonText: {
+    color: "#FFFFFF",
+    fontSize: 14,
+    fontWeight: "500",
+  },
+  emptyContainer: {
+    padding: 24,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#FFFFFF",
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: "#E5E7EB",
+  },
+  emptyText: {
+    marginBottom: 16,
+    fontSize: 14,
+    color: "#6B7280",
+    textAlign: "center",
+  },
+  createListButton: {
+    backgroundColor: "#3B82F6",
+    borderRadius: 6,
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+  },
+  createListButtonText: {
+    color: "#FFFFFF",
+    fontSize: 14,
+    fontWeight: "500",
   },
 });
