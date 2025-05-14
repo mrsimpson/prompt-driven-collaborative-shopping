@@ -191,26 +191,57 @@ Our application uses a page-oriented architecture with minimal global state. We'
   - [ ] Add caching strategies
   - [ ] Optimize synchronization for large datasets
 
-## Phase 8: Testing & Refinement
+## Phase 8: Mobile Storage Migration (WatermelonDB)
 
-- [ ] **8.1 Implement Unit Tests**
+- [ ] **8.1 Setup WatermelonDB**
+  - [ ] Install WatermelonDB and dependencies
+  - [ ] Configure WatermelonDB for React Native/Expo
+  - [ ] Set up database schema using Model classes
+  - [ ] Create database initialization logic
+
+- [ ] **8.2 Implement Model Classes**
+  - [ ] Create User model
+  - [ ] Create ShoppingList model
+  - [ ] Create ListItem model
+  - [ ] Create ShoppingSession model
+  - [ ] Implement relationships between models
+
+- [ ] **8.3 Create Repository Implementations**
+  - [ ] Implement UserRepository with WatermelonDB
+  - [ ] Implement ShoppingListRepository with WatermelonDB
+  - [ ] Implement ListItemRepository with WatermelonDB
+  - [ ] Implement ShoppingSessionRepository with WatermelonDB
+
+- [ ] **8.4 Adapt Service Layer**
+  - [ ] Update service implementations to use WatermelonDB repositories
+  - [ ] Ensure all business logic remains unchanged
+  - [ ] Adapt query patterns to use WatermelonDB Q builders
+
+- [ ] **8.5 Implement Migration Strategy**
+  - [ ] Create data migration utilities from Dexie.js to WatermelonDB
+  - [ ] Implement schema migration capabilities
+  - [ ] Add fallback mechanisms for data recovery
+
+## Phase 9: Testing & Refinement
+
+- [ ] **9.1 Implement Unit Tests**
 
   - [ ] Create tests for repository implementations
   - [ ] Add tests for synchronization logic
 
-- [ ] **8.2 Add Integration Tests**
+- [ ] **9.2 Add Integration Tests**
 
   - [ ] Test UI components
   - [ ] Create end-to-end tests for key flows
   - [ ] Test offline capabilities
 
-- [ ] **8.3 Perform User Testing**
+- [ ] **9.3 Perform User Testing**
 
   - [ ] Conduct usability testing
   - [ ] Gather feedback on core workflows
   - [ ] Identify and fix usability issues
 
-- [ ] **8.4 Final Refinements**
+- [ ] **9.4 Final Refinements**
   - [ ] Address feedback from testing
   - [ ] Optimize performance bottlenecks
   - [ ] Prepare for production deployment
@@ -261,7 +292,7 @@ To ensure we can swap out the database layer, we'll create:
 
 ### Local-First Development Flow
 
-1. Start with local-only implementations using Dexie.js
+1. Start with local-only implementations using WatermelonDB
 2. Build UI components against service interfaces
 3. Add Supabase implementations of repositories
 4. Implement synchronization logic
