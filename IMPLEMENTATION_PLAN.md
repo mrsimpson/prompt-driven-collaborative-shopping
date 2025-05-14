@@ -100,7 +100,7 @@ This document outlines the step-by-step implementation plan for the collaborativ
   - [x] Editing of items
   - [x] Improve navigation efficiency
   - [x] Better shopping experience for multiple lists
-  - [ ] Edit and delete shopping lists
+  - [x] Edit and delete shopping lists
 
 ## Phase 4: State Management
 

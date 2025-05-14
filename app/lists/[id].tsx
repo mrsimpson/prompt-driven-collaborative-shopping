@@ -10,7 +10,7 @@ import {
   Dimensions,
 } from "react-native";
 import { useLocalSearchParams, router } from "expo-router";
-import { Plus, ShoppingBag } from "lucide-react-native";
+import { Plus, ShoppingBag, Edit, Trash2 } from "lucide-react-native";
 import { HeaderWithBack } from "@/src/components/HeaderWithBack";
 import { layout, colors, buttons, typography } from "@/src/styles/common";
 import { useListItems, useShoppingLists } from "@/src/hooks";
@@ -126,6 +126,7 @@ export default function ListDetailScreen() {
     lists,
     loading: listsLoading,
     error: listsError,
+    deleteList,
   } = useShoppingLists();
   const {
     items,
@@ -292,6 +293,39 @@ export default function ListDetailScreen() {
         title={currentList.name}
         backTo="/lists"
         backTitle="My Lists"
+        rightElement={
+          <View style={{ flexDirection: "row" }}>
+            <TouchableOpacity
+              style={[buttons.iconSecondary, { marginRight: 8 }]}
+              onPress={() => router.push(`/lists/edit/${listId}`)}
+            >
+              <Edit size={20} color={colors.primary} />
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={buttons.iconDanger}
+              onPress={() => {
+                CrossPlatformAlert.confirm(
+                  "Delete List",
+                  "Are you sure you want to delete this list? This action cannot be undone.",
+                  async () => {
+                    try {
+                      await deleteList(listId);
+                      router.replace("/lists");
+                    } catch (error) {
+                      const errorMessage =
+                        error instanceof Error
+                          ? error.message
+                          : "Failed to delete list";
+                      CrossPlatformAlert.show("Error", errorMessage);
+                    }
+                  }
+                );
+              }}
+            >
+              <Trash2 size={20} color={colors.white} />
+            </TouchableOpacity>
+          </View>
+        }
       />
 
       <View style={styles.addItemForm}>

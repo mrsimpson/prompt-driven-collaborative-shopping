@@ -150,12 +150,29 @@ export const buttons = StyleSheet.create({
     alignItems: "center",
     backgroundColor: colors.primary,
   },
+  iconSecondary: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: colors.white,
+    borderWidth: 1,
+    borderColor: colors.primary,
+  },
+  iconDanger: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: colors.danger,
+  },
   iconText: {
     flexDirection: "row",
     justifyContent: "center",
     alignItems: "center",
   },
-  // Add missing button style
   secondary: {
     backgroundColor: colors.white,
     borderWidth: 1,
