@@ -9,9 +9,7 @@ export default function TabLayout() {
         tabBarInactiveTintColor: "#9CA3AF",
         tabBarStyle: {
           elevation: 0,
-          shadowOpacity: 0.1,
-          shadowOffset: { width: 0, height: -1 },
-          shadowRadius: 4,
+          boxShadow: "0px -1px 4px rgba(0, 0, 0, 0.1)",
           borderTopWidth: 1,
           borderTopColor: "rgba(0, 0, 0, 0.05)",
           backgroundColor: "#FFFFFF",
