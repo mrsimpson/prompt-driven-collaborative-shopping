@@ -10,7 +10,12 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Link } from "expo-router";
-import { ShoppingCart, ListPlus, ShoppingBag, AlertCircle } from "lucide-react-native";
+import {
+  ShoppingCart,
+  ListPlus,
+  ShoppingBag,
+  AlertCircle,
+} from "lucide-react-native";
 import { useAuth } from "@/src/contexts/AuthContext";
 import { useShoppingLists } from "@/src/hooks/useShoppingLists";
 import { useListItems } from "@/src/hooks/useListItems";
@@ -19,11 +24,19 @@ import { ShoppingList } from "@/src/types/models";
 // Maximum number of recent lists to show on the home screen
 const MAX_RECENT_LISTS = 3;
 
+// Define a type for shopping lists with item counts
+type ShoppingListWithItemCount = ShoppingList & { itemCount: number };
+
 export default function HomeScreen() {
   const { isLocalMode } = useAuth();
-  const { lists, loading: listsLoading, error: listsError, refreshLists } = useShoppingLists();
+  const {
+    lists,
+    loading: listsLoading,
+    error: listsError,
+    refreshLists,
+  } = useShoppingLists();
   const { getListItemsCount } = useListItems();
-  const [recentLists, setRecentLists] = useState<ShoppingList & { itemCount: number }[]>([]);
+  const [recentLists, setRecentLists] = useState<ShoppingListWithItemCount[]>([]);
   const [loadingItemCounts, setLoadingItemCounts] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
 
@@ -31,24 +44,28 @@ export default function HomeScreen() {
   useEffect(() => {
     const loadItemCounts = async () => {
       if (lists.length === 0) return;
-      
+
       setLoadingItemCounts(true);
       try {
         const listsWithCounts = await Promise.all(
           // Sort by last modified date and take only the most recent ones
           [...lists]
             .sort((a, b) => {
-              const dateA = a.lastModifiedAt ? new Date(a.lastModifiedAt).getTime() : 0;
-              const dateB = b.lastModifiedAt ? new Date(b.lastModifiedAt).getTime() : 0;
+              const dateA = a.lastModifiedAt
+                ? new Date(a.lastModifiedAt).getTime()
+                : 0;
+              const dateB = b.lastModifiedAt
+                ? new Date(b.lastModifiedAt).getTime()
+                : 0;
               return dateB - dateA; // Most recent first
             })
             .slice(0, MAX_RECENT_LISTS)
             .map(async (list) => {
               const count = await getListItemsCount(list.id);
-              return { ...list, itemCount: count };
-            })
+              return { ...list, itemCount: count } as ShoppingListWithItemCount;
+            }),
         );
-        
+
         setRecentLists(listsWithCounts);
       } catch (error) {
         console.error("Error loading item counts:", error);
@@ -69,7 +86,7 @@ export default function HomeScreen() {
 
   return (
     <SafeAreaView style={styles.container} edges={["bottom"]}>
-      <ScrollView 
+      <ScrollView
         contentContainerStyle={styles.scrollContent}
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />
@@ -140,7 +157,7 @@ export default function HomeScreen() {
               <Text style={styles.errorText}>
                 Error loading lists. Please try again.
               </Text>
-              <TouchableOpacity 
+              <TouchableOpacity
                 style={styles.retryButton}
                 onPress={handleRefresh}
               >
@@ -154,7 +171,9 @@ export default function HomeScreen() {
               </Text>
               <Link href="/lists/new" asChild>
                 <TouchableOpacity style={styles.createListButton}>
-                  <Text style={styles.createListButtonText}>Create Your First List</Text>
+                  <Text style={styles.createListButtonText}>
+                    Create Your First List
+                  </Text>
                 </TouchableOpacity>
               </Link>
             </View>
