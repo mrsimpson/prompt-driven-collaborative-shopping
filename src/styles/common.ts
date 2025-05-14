@@ -52,6 +52,7 @@ export const typography = StyleSheet.create({
   body: {
     fontSize: 16,
     color: colors.black,
+    marginBottom: 8
   },
   bodySmall: {
     fontSize: 14,

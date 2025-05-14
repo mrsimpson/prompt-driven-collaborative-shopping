@@ -24,6 +24,7 @@ interface ShoppingListItemProps {
   sourceListName?: string;
   isDragging?: boolean;
   dragHandleProps?: any;
+  highlightSource?: boolean;
 }
 
 export const ShoppingListItem: React.FC<ShoppingListItemProps> = ({
@@ -34,6 +35,7 @@ export const ShoppingListItem: React.FC<ShoppingListItemProps> = ({
   mode = "edit",
   sourceListName,
   dragHandleProps,
+  highlightSource = false,
 }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [editName, setEditName] = useState(item.name);
@@ -284,7 +286,12 @@ export const ShoppingListItem: React.FC<ShoppingListItemProps> = ({
 
           {/* Show source list name in shopping mode */}
           {mode === "shopping" && sourceListName && (
-            <Text style={styles.itemSource}>From: {sourceListName}</Text>
+            <Text style={[
+              styles.itemSource,
+              highlightSource && styles.itemSourceHighlighted
+            ]}>
+              From: {sourceListName}
+            </Text>
           )}
         </View>
 
@@ -437,5 +444,9 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: colors.gray400,
     marginTop: 4,
+  },
+  itemSourceHighlighted: {
+    color: colors.primary,
+    fontWeight: "500",
   },
 });

@@ -92,9 +92,10 @@ export default function ListsScreen() {
             >
               <View>
                 <Text style={typography.body}>{item.name}</Text>
-                <Text style={typography.bodySmall}>
-                  {item.description ? item.description : "No description"}
-                </Text>
+
+                {item.description && (
+                  <Text style={typography.bodySmall}>{item.description}</Text>
+                )}
               </View>
             </TouchableOpacity>
           )}

@@ -5,7 +5,6 @@ import {
   TouchableOpacity,
   TextInput,
   ActivityIndicator,
-  Alert,
   KeyboardAvoidingView,
   Platform,
   Dimensions,
@@ -19,6 +18,7 @@ import { ListItem } from "@/src/types/models";
 import { ShoppingListItem } from "@/src/components/ShoppingListItem";
 import { SortableList } from "@/src/components/SortableList";
 import { SortableItem } from "@/src/components/SortableItem";
+import { CrossPlatformAlert } from "@/src/components/CrossPlatformAlert";
 
 // Helper function to detect if we're on mobile
 const isMobile = () => {
@@ -208,7 +208,7 @@ export default function ListDetailScreen() {
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : "Failed to add item";
-      Alert.alert("Error", errorMessage);
+      CrossPlatformAlert.show("Error", errorMessage);
     } finally {
       setIsAddingItem(false);
     }
@@ -226,7 +226,7 @@ export default function ListDetailScreen() {
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : "Failed to update item";
-      Alert.alert("Error", errorMessage);
+      CrossPlatformAlert.show("Error", errorMessage);
     }
   };
 
@@ -236,7 +236,7 @@ export default function ListDetailScreen() {
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : "Failed to delete item";
-      Alert.alert("Error", errorMessage);
+      CrossPlatformAlert.show("Error", errorMessage);
     }
   };
 
@@ -250,7 +250,7 @@ export default function ListDetailScreen() {
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : "Failed to reorder items";
-      Alert.alert("Error", errorMessage);
+      CrossPlatformAlert.show("Error", errorMessage);
 
       // Revert to original order on error
       setLocalItems([...items]);

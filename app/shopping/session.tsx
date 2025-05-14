@@ -6,6 +6,7 @@ import {
   FlatList,
   TouchableOpacity,
   ActivityIndicator,
+  ScrollView,
 } from "react-native";
 import { router, useLocalSearchParams, useNavigation } from "expo-router";
 import { ShoppingBag } from "lucide-react-native";
@@ -27,6 +28,7 @@ export default function ShoppingSessionScreen() {
   }, [params.listIds]);
 
   const [isCheckoutMode, setIsCheckoutMode] = useState(false);
+  const [activeListFilter, setActiveListFilter] = useState<string | null>(null);
 
   const {
     session,
@@ -39,6 +41,14 @@ export default function ShoppingSessionScreen() {
     endSession,
     cancelSession,
   } = useShoppingSession();
+  
+  // Filter items based on the active list filter
+  const filteredItems = useMemo(() => {
+    if (!activeListFilter) return items.sort((a, b) => a.sortOrder - b.sortOrder);
+    return items
+      .filter(item => item.listId === activeListFilter)
+      .sort((a, b) => a.sortOrder - b.sortOrder);
+  }, [items, activeListFilter]);
 
   // Create a new shopping session when the component mounts
   useEffect(() => {
@@ -254,6 +264,15 @@ export default function ShoppingSessionScreen() {
     );
   }
 
+  // Toggle list filter
+  const toggleListFilter = (listId: string) => {
+    if (activeListFilter === listId) {
+      setActiveListFilter(null); // Clear filter if already active
+    } else {
+      setActiveListFilter(listId); // Set new filter
+    }
+  };
+
   return (
     <View style={styles.container}>
       <HeaderWithBack
@@ -261,9 +280,36 @@ export default function ShoppingSessionScreen() {
         backTo={listIds.length > 0 ? `/lists/${listIds[0]}` : "/shopping"}
         backTitle={listIds.length > 0 ? "Back to List" : "Select Lists"}
       />
+      
+      {lists.length > 1 && (
+        <View style={styles.filterContainer}>
+          <Text style={styles.filterLabel}>Filter by list:</Text>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.filterScroll}>
+            {lists.map(list => (
+              <TouchableOpacity
+                key={list.id}
+                style={[
+                  styles.filterChip,
+                  activeListFilter === list.id && styles.filterChipActive
+                ]}
+                onPress={() => toggleListFilter(list.id)}
+              >
+                <Text 
+                  style={[
+                    styles.filterChipText,
+                    activeListFilter === list.id && styles.filterChipTextActive
+                  ]}
+                >
+                  {list.name}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+        </View>
+      )}
 
       <FlatList
-        data={items.sort((a, b) => a.sortOrder - b.sortOrder)}
+        data={filteredItems}
         keyExtractor={(item) => {
           // Generate a stable ID for each item
           if (!item.id) {
@@ -287,6 +333,7 @@ export default function ShoppingSessionScreen() {
               }}
               mode="shopping"
               sourceListName={sourceList?.name}
+              highlightSource={lists.length > 1 && !activeListFilter}
             />
           );
         }}
@@ -386,5 +433,41 @@ const styles = StyleSheet.create({
     color: colors.white,
     fontSize: 16,
     fontWeight: "600",
+  },
+  filterContainer: {
+    backgroundColor: colors.white,
+    padding: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.gray200,
+  },
+  filterLabel: {
+    fontSize: 14,
+    fontWeight: "500",
+    color: colors.gray700,
+    marginBottom: 8,
+  },
+  filterScroll: {
+    flexDirection: "row",
+  },
+  filterChip: {
+    backgroundColor: colors.gray100,
+    borderRadius: 16,
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    marginRight: 8,
+    borderWidth: 1,
+    borderColor: colors.gray200,
+  },
+  filterChipActive: {
+    backgroundColor: colors.primary,
+    borderColor: colors.primaryDark,
+  },
+  filterChipText: {
+    fontSize: 14,
+    color: colors.gray700,
+  },
+  filterChipTextActive: {
+    color: colors.white,
+    fontWeight: "500",
   },
 });
