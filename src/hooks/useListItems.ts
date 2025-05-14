@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import { ListItem } from "../types/models";
 import { ServiceFactory } from "../services";
 import { safeParseListItem, safeParseListItems } from "../utils/schemas";
+import { ServiceResult } from "../types/operations";
 
 export function useListItems(listId?: string) {
   const [items, setItems] = useState<ListItem[]>([]);
@@ -252,6 +253,22 @@ export function useListItems(listId?: string) {
     [shoppingListService],
   );
 
+  // Get items for a specific list (useful when not using the hook with a specific listId)
+  const getItemsForList = useCallback(
+    async (specificListId: string): Promise<ServiceResult<ListItem[]>> => {
+      try {
+        return await shoppingListService.getListItems(specificListId);
+      } catch (error) {
+        console.error(`Error getting items for list ${specificListId}:`, error);
+        return {
+          success: false,
+          error: error instanceof Error ? error.message : "Unknown error",
+        };
+      }
+    },
+    [shoppingListService],
+  );
+
   return {
     items,
     loading,
@@ -263,5 +280,6 @@ export function useListItems(listId?: string) {
     reorderItems,
     markItemAsPurchased,
     getListItemsCount,
+    getItemsForList,
   };
 }

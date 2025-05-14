@@ -1,5 +1,5 @@
-import React, { useState } from "react";
-import { View, Text, FlatList, TouchableOpacity } from "react-native";
+import React, { useState, useEffect } from "react";
+import { View, Text, FlatList, TouchableOpacity, ActivityIndicator } from "react-native";
 import { router } from "expo-router";
 import { ShoppingCart } from "lucide-react-native";
 import { HeaderWithBack } from "@/src/components/HeaderWithBack";
@@ -11,13 +11,8 @@ import {
   colors,
   checkboxes,
 } from "@/src/styles/common";
-
-// Mock data - will be replaced with actual data from Dexie.js
-const MOCK_LISTS = [
-  { id: "1", name: "Grocery List", itemCount: 5, selected: false },
-  { id: "2", name: "Hardware Store", itemCount: 3, selected: false },
-  { id: "3", name: "Birthday Party", itemCount: 8, selected: false },
-];
+import { useShoppingLists, useListItems } from "@/src/hooks";
+import { CrossPlatformAlert } from "@/src/components/CrossPlatformAlert";
 
 const styles = {
   listInfo: {
@@ -42,36 +37,105 @@ const styles = {
   buttonIcon: {
     marginRight: 8,
   },
+  emptyState: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 20,
+  },
+  emptyStateText: {
+    fontSize: 16,
+    color: colors.gray500,
+    textAlign: "center",
+    marginBottom: 20,
+  },
 };
 
 export default function ShoppingModeScreen() {
-  const [lists, setLists] = useState(MOCK_LISTS);
+  const { lists, loading: listsLoading, error: listsError, refreshLists } = useShoppingLists();
+  const { getItemsForList } = useListItems();
+  const [selectedLists, setSelectedLists] = useState<Set<string>>(new Set());
+  const [listItemCounts, setListItemCounts] = useState<Record<string, number>>({});
+  const [loadingCounts, setLoadingCounts] = useState(true);
+
+  // Load item counts for each list
+  useEffect(() => {
+    const fetchItemCounts = async () => {
+      if (lists.length === 0) return;
+      
+      setLoadingCounts(true);
+      const counts: Record<string, number> = {};
+      
+      try {
+        for (const list of lists) {
+          const result = await getItemsForList(list.id);
+          if (result.success) {
+            // Only count non-purchased items
+            counts[list.id] = result.data.filter(item => !item.isPurchased).length;
+          }
+        }
+        setListItemCounts(counts);
+      } catch (error) {
+        console.error("Error fetching item counts:", error);
+      } finally {
+        setLoadingCounts(false);
+      }
+    };
+    
+    fetchItemCounts();
+  }, [lists, getItemsForList]);
 
   const toggleListSelection = (id: string) => {
-    setLists(
-      lists.map((list) =>
-        list.id === id ? { ...list, selected: !list.selected } : list,
-      ),
-    );
+    setSelectedLists(prev => {
+      const newSelection = new Set(prev);
+      if (newSelection.has(id)) {
+        newSelection.delete(id);
+      } else {
+        newSelection.add(id);
+      }
+      return newSelection;
+    });
   };
 
   const startShopping = () => {
-    const selectedLists = lists.filter((list) => list.selected);
-    if (selectedLists.length === 0) {
-      // Show error - would use a proper alert/toast in a real implementation
-      console.log("Please select at least one list");
+    if (selectedLists.size === 0) {
+      CrossPlatformAlert.show(
+        "No Lists Selected",
+        "Please select at least one list to shop with."
+      );
       return;
     }
 
-    // In a real implementation, this would create a shopping session
-    // with the selected lists using our ShoppingSessionService
-    console.log(
-      "Starting shopping with lists:",
-      selectedLists.map((l) => l.id),
+    // Check if any selected list has no items
+    const emptyLists = Array.from(selectedLists).filter(
+      listId => listItemCounts[listId] === 0
     );
 
-    // Navigate to the shopping session screen
-    router.push("/shopping/session");
+    if (emptyLists.length > 0) {
+      // If there are empty lists, show a warning
+      CrossPlatformAlert.show(
+        "Empty Lists Selected",
+        "Some of your selected lists have no items. Do you want to continue?",
+        [
+          {
+            text: "Cancel",
+            style: "cancel",
+          },
+          {
+            text: "Continue",
+            onPress: () => navigateToShoppingSession(),
+          },
+        ]
+      );
+    } else {
+      // If all lists have items, proceed directly
+      navigateToShoppingSession();
+    }
+  };
+
+  const navigateToShoppingSession = () => {
+    const listIdsParam = Array.from(selectedLists).join(",");
+    router.push(`/shopping/session?listIds=${listIdsParam}`);
   };
 
   return (
@@ -81,52 +145,85 @@ export default function ShoppingModeScreen() {
       <View style={layout.content}>
         <Text style={typography.subtitle}>Select lists to shop with:</Text>
 
-        <FlatList
-          data={lists}
-          keyExtractor={(item) => item.id}
-          renderItem={({ item }) => (
+        {listsLoading || loadingCounts ? (
+          <View style={[layout.center, { flex: 1 }]}>
+            <ActivityIndicator size="large" color={colors.primary} />
+            <Text style={[typography.body, { marginTop: 16 }]}>
+              Loading your shopping lists...
+            </Text>
+          </View>
+        ) : listsError ? (
+          <View style={[layout.center, { flex: 1 }]}>
+            <Text style={[typography.body, { color: colors.danger }]}>
+              {listsError.message || "Failed to load shopping lists"}
+            </Text>
             <TouchableOpacity
-              style={[cards.basic, item.selected && cards.selected]}
-              onPress={() => toggleListSelection(item.id)}
+              style={[buttons.secondary, { marginTop: 16 }]}
+              onPress={() => refreshLists()}
             >
-              <View style={layout.spaceBetween}>
-                <View style={styles.listInfo}>
-                  <Text
-                    style={[
-                      styles.listName,
-                      item.selected && styles.listNameSelected,
-                    ]}
-                  >
-                    {item.name}
-                  </Text>
-                  <Text
-                    style={[
-                      styles.listCount,
-                      item.selected && styles.listCountSelected,
-                    ]}
-                  >
-                    {item.itemCount} items
-                  </Text>
-                </View>
-                <View
-                  style={[
-                    checkboxes.base,
-                    item.selected ? checkboxes.checked : checkboxes.unchecked,
-                  ]}
-                />
-              </View>
+              <Text style={typography.buttonTextSecondary}>Try Again</Text>
             </TouchableOpacity>
-          )}
-          contentContainerStyle={{ flexGrow: 1 }}
-        />
+          </View>
+        ) : lists.length === 0 ? (
+          <View style={styles.emptyState}>
+            <Text style={styles.emptyStateText}>
+              You don't have any shopping lists yet. Create a list to start shopping.
+            </Text>
+            <TouchableOpacity
+              style={buttons.primary}
+              onPress={() => router.push("/lists/new")}
+            >
+              <Text style={typography.buttonText}>Create a List</Text>
+            </TouchableOpacity>
+          </View>
+        ) : (
+          <FlatList
+            data={lists}
+            keyExtractor={(item) => item.id}
+            renderItem={({ item }) => (
+              <TouchableOpacity
+                style={[cards.basic, selectedLists.has(item.id) && cards.selected]}
+                onPress={() => toggleListSelection(item.id)}
+              >
+                <View style={layout.spaceBetween}>
+                  <View style={styles.listInfo}>
+                    <Text
+                      style={[
+                        styles.listName,
+                        selectedLists.has(item.id) && styles.listNameSelected,
+                      ]}
+                    >
+                      {item.name}
+                    </Text>
+                    <Text
+                      style={[
+                        styles.listCount,
+                        selectedLists.has(item.id) && styles.listCountSelected,
+                      ]}
+                    >
+                      {listItemCounts[item.id] || 0} items
+                    </Text>
+                  </View>
+                  <View
+                    style={[
+                      checkboxes.base,
+                      selectedLists.has(item.id) ? checkboxes.checked : checkboxes.unchecked,
+                    ]}
+                  />
+                </View>
+              </TouchableOpacity>
+            )}
+            contentContainerStyle={{ flexGrow: 1 }}
+          />
+        )}
 
         <TouchableOpacity
           style={[
             buttons.primary,
-            !lists.some((l) => l.selected) && buttons.primaryDisabled,
+            selectedLists.size === 0 && buttons.primaryDisabled,
           ]}
           onPress={startShopping}
-          disabled={!lists.some((l) => l.selected)}
+          disabled={selectedLists.size === 0}
         >
           <View style={buttons.iconText}>
             <ShoppingCart
