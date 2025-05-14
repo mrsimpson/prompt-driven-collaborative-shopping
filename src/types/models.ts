@@ -81,6 +81,17 @@ export interface ListItem extends BaseEntity {
   purchasedBy?: string; // userId of the person who purchased the item
   purchasedAt?: Date; // When the item was purchased
   sortOrder: number; // Position in the list for sorting
+  sources?: ItemSource[]; // Sources for aggregated items
+}
+
+/**
+ * Source information for aggregated items
+ */
+export interface ItemSource {
+  listId: string;
+  itemId: string;
+  quantity: number;
+  isPurchased: boolean;
 }
 
 /**

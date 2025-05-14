@@ -321,6 +321,17 @@ export default function ShoppingSessionScreen() {
         renderItem={({ item }) => {
           // Find the source list for this item
           const sourceList = lists.find((list) => list.id === item.listId);
+          
+          // Check if this item is aggregated from multiple lists
+          const isAggregated = item.sources && item.sources.length > 1;
+          
+          // Get all source list names if the item is aggregated
+          const sourceLists = isAggregated 
+            ? item.sources?.map(source => {
+                const list = lists.find(l => l.id === source.listId);
+                return list?.name || "Unknown list";
+              })
+            : [];
 
           return (
             <ShoppingListItem
@@ -333,7 +344,8 @@ export default function ShoppingSessionScreen() {
               }}
               mode="shopping"
               sourceListName={sourceList?.name}
-              highlightSource={lists.length > 1 && !activeListFilter}
+              sourceLists={isAggregated ? sourceLists : undefined}
+              highlightSource={isAggregated}
             />
           );
         }}

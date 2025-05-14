@@ -22,6 +22,7 @@ interface ShoppingListItemProps {
   // Define the expected props from SortableItem
   mode?: "edit" | "shopping";
   sourceListName?: string;
+  sourceLists?: string[];
   isDragging?: boolean;
   dragHandleProps?: any;
   highlightSource?: boolean;
@@ -34,6 +35,7 @@ export const ShoppingListItem: React.FC<ShoppingListItemProps> = ({
   isDragging = false,
   mode = "edit",
   sourceListName,
+  sourceLists,
   dragHandleProps,
   highlightSource = false,
 }) => {
@@ -285,13 +287,30 @@ export const ShoppingListItem: React.FC<ShoppingListItemProps> = ({
           </View>
 
           {/* Show source list name in shopping mode */}
-          {mode === "shopping" && sourceListName && (
-            <Text style={[
-              styles.itemSource,
-              highlightSource && styles.itemSourceHighlighted
-            ]}>
-              From: {sourceListName}
-            </Text>
+          {mode === "shopping" && (
+            <>
+              {sourceLists && sourceLists.length > 1 ? (
+                <View style={styles.sourceListsContainer}>
+                  <Text
+                    style={[
+                      styles.itemSource,
+                      highlightSource && styles.itemSourceHighlighted,
+                    ]}
+                  >
+                    From: {sourceLists.join(", ")}
+                  </Text>
+                </View>
+              ) : sourceListName && highlightSource ? (
+                <Text
+                  style={[
+                    styles.itemSource,
+                    highlightSource && styles.itemSourceHighlighted,
+                  ]}
+                >
+                  From: {sourceListName}
+                </Text>
+              ) : null}
+            </>
           )}
         </View>
 
@@ -448,5 +467,13 @@ const styles = StyleSheet.create({
   itemSourceHighlighted: {
     color: colors.primary,
     fontWeight: "500",
+  },
+  sourceListsContainer: {
+    marginTop: 4,
+  },
+  sourceListItem: {
+    fontSize: 12,
+    color: colors.gray400,
+    marginLeft: 8,
   },
 });
