@@ -46,6 +46,7 @@ export interface ShoppingListService {
   updateListItem(params: UpdateListItemParams): Promise<Result<ListItem>>;
   removeItemFromList(itemId: string): Promise<Result<void>>;
   getListItems(listId: string): Promise<Result<ListItem[]>>;
+  reorderListItems(listId: string, itemIds: string[]): Promise<Result<ListItem[]>>;
 
   shareList(params: ShareListParams): Promise<Result<void>>;
   unshareList(listId: string, userId: string): Promise<Result<void>>;
@@ -323,9 +324,10 @@ export class LocalShoppingListService implements ShoppingListService {
 
       // Get the highest sort order to place the new item at the end
       const existingItems = await this.itemRepository.findByList(params.listId);
-      const maxSortOrder = existingItems.length > 0
-        ? Math.max(...existingItems.map(item => item.sortOrder || 0))
-        : 0;
+      const maxSortOrder =
+        existingItems.length > 0
+          ? Math.max(...existingItems.map((item) => item.sortOrder || 0))
+          : 0;
 
       // Create the item
       const item: Partial<ListItem> = {
@@ -334,7 +336,10 @@ export class LocalShoppingListService implements ShoppingListService {
         quantity: params.quantity,
         unit: params.unit,
         isPurchased: false,
-        sortOrder: params.sortOrder !== undefined ? params.sortOrder : maxSortOrder + 1000, // Use large increments to allow for easy reordering
+        sortOrder:
+          params.sortOrder !== undefined
+            ? params.sortOrder
+            : maxSortOrder + 1000, // Use large increments to allow for easy reordering
       };
 
       const savedItem = await this.itemRepository.save(item);
@@ -396,8 +401,7 @@ export class LocalShoppingListService implements ShoppingListService {
         updates.isPurchased = params.isPurchased;
       if (params.purchasedAt !== undefined)
         updates.purchasedAt = params.purchasedAt;
-      if (params.sortOrder !== undefined)
-        updates.sortOrder = params.sortOrder;
+      if (params.sortOrder !== undefined) updates.sortOrder = params.sortOrder;
 
       const updatedItem = await this.itemRepository.update(params.id, updates);
 
@@ -587,6 +591,62 @@ export class LocalShoppingListService implements ShoppingListService {
         success: false,
         error:
           error instanceof Error ? error.message : "Failed to get list owners",
+      };
+    }
+  }
+  
+  /**
+   * Reorder items in a shopping list
+   * @param listId List ID
+   * @param itemIds Array of item IDs in the desired order
+   * @returns Result with the reordered items
+   */
+  async reorderListItems(
+    listId: string,
+    itemIds: string[]
+  ): Promise<Result<ListItem[]>> {
+    try {
+      // Check if the list exists
+      const list = await this.listRepository.findById(listId);
+      if (!list) {
+        return { success: false, error: "List not found" };
+      }
+
+      // Check if the list is locked
+      if (list.isLocked) {
+        return { success: false, error: "Cannot reorder items in a locked list" };
+      }
+
+      // Get all items in the list
+      const items = await this.itemRepository.findByList(listId);
+      
+      // Create a map of items by ID for quick lookup
+      const itemMap = new Map<string, ListItem>();
+      items.forEach(item => itemMap.set(item.id, item));
+      
+      // Validate that all itemIds exist in the list
+      for (const itemId of itemIds) {
+        if (!itemMap.has(itemId)) {
+          return { success: false, error: `Item with ID ${itemId} not found in list` };
+        }
+      }
+      
+      // Update sort order for each item based on its position in the itemIds array
+      const updatePromises = itemIds.map((itemId, index) => {
+        const sortOrder = (index + 1) * 1000; // Use 1000 as increment for easy future reordering
+        return this.itemRepository.update(itemId, { sortOrder });
+      });
+      
+      await Promise.all(updatePromises);
+      
+      // Fetch the updated items
+      const updatedItems = await this.itemRepository.findByList(listId);
+      
+      return { success: true, data: updatedItems };
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : "Failed to reorder list items",
       };
     }
   }

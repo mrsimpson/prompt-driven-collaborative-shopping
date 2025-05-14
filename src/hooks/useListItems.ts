@@ -12,7 +12,7 @@ export function useListItems(listId?: string) {
   // Fetch list items
   const fetchItems = useCallback(async () => {
     if (!listId) return;
-    
+
     try {
       setLoading(true);
       setError(null);
@@ -44,11 +44,21 @@ export function useListItems(listId?: string) {
 
   // Add a new item to the list
   const addItem = useCallback(
-    async (item: Omit<ListItem, "id" | "listId" | "createdAt" | "updatedAt" | "lastModifiedAt" | "sortOrder">) => {
+    async (
+      item: Omit<
+        ListItem,
+        | "id"
+        | "listId"
+        | "createdAt"
+        | "updatedAt"
+        | "lastModifiedAt"
+        | "sortOrder"
+      >,
+    ) => {
       if (!listId) {
         throw new Error("List ID is required to add an item");
       }
-      
+
       try {
         setError(null);
         const result = await shoppingListService.addItemToList({
@@ -63,9 +73,9 @@ export function useListItems(listId?: string) {
         // Parse and validate the returned item
         const validItem = safeParseListItem(result.data);
         if (validItem) {
-          setItems(prevItems => [...prevItems, validItem]);
+          setItems((prevItems) => [...prevItems, validItem]);
         }
-        
+
         return result.data;
       } catch (err) {
         setError(
@@ -83,7 +93,7 @@ export function useListItems(listId?: string) {
       if (!listId) {
         throw new Error("List ID is required to update an item");
       }
-      
+
       try {
         setError(null);
         const result = await shoppingListService.updateListItem({
@@ -98,8 +108,8 @@ export function useListItems(listId?: string) {
 
         // Parse and validate the returned item
         const validItem = safeParseListItem(result.data);
-        setItems(prevItems => {
-          return prevItems.map(item => {
+        setItems((prevItems) => {
+          return prevItems.map((item) => {
             if (item.id === itemId && validItem) {
               return validItem;
             }
@@ -129,7 +139,7 @@ export function useListItems(listId?: string) {
           throw new Error(result.error);
         }
 
-        setItems(prevItems => prevItems.filter(item => item.id !== itemId));
+        setItems((prevItems) => prevItems.filter((item) => item.id !== itemId));
       } catch (err) {
         setError(
           err instanceof Error
@@ -148,16 +158,11 @@ export function useListItems(listId?: string) {
       if (!listId) {
         throw new Error("List ID is required to reorder items");
       }
-      
+
       try {
         setError(null);
-        // Check if the service has the reorderListItems method
-        if (typeof (shoppingListService as any).reorderListItems !== 'function') {
-          throw new Error("reorderListItems method not available");
-        }
-        
-        // We still need this type assertion for the method call
-        const result = await (shoppingListService as any).reorderListItems(
+        // Call the reorderListItems method directly
+        const result = await shoppingListService.reorderListItems(
           listId,
           itemIds,
         );
@@ -185,7 +190,7 @@ export function useListItems(listId?: string) {
       if (!listId) {
         throw new Error("List ID is required to mark an item as purchased");
       }
-      
+
       try {
         setError(null);
         const result = await shoppingListService.updateListItem({
@@ -200,8 +205,8 @@ export function useListItems(listId?: string) {
 
         // Parse and validate the returned item
         const validItem = safeParseListItem(result.data);
-        setItems(prevItems => {
-          return prevItems.map(item => {
+        setItems((prevItems) => {
+          return prevItems.map((item) => {
             if (item.id === itemId) {
               if (validItem) {
                 return validItem;
@@ -237,11 +242,14 @@ export function useListItems(listId?: string) {
         }
         return 0;
       } catch (error) {
-        console.error(`Error getting item count for list ${specificListId}:`, error);
+        console.error(
+          `Error getting item count for list ${specificListId}:`,
+          error,
+        );
         return 0;
       }
     },
-    [shoppingListService]
+    [shoppingListService],
   );
 
   return {

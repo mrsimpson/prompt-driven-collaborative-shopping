@@ -1,40 +1,29 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Animated, Alert, Platform, Dimensions } from 'react-native';
-import { Edit2, Trash2, GripVertical, Check } from 'lucide-react-native';
-import { colors } from '@/src/styles/common';
-import { ListItem} from '@/src/types/models';
-import { InlineEdit } from './InlineEdit';
-import { Swipeable, RectButton } from 'react-native-gesture-handler';
-import { isMobile } from '../utils/isMobile';
-
-// Helper function to detect if we're on mobile web
-const isMobileWeb = () => {
-  if (Platform.OS !== 'web') return false;
-  
-  // Check if window and navigator exist (they should in web environment)
-  if (typeof window !== 'undefined' && window.navigator) {
-    const userAgent = window.navigator.userAgent || '';
-    return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(userAgent);
-  }
-  
-  // Fallback to screen size check
-  const windowWidth = Dimensions.get('window').width;
-  return windowWidth < 768; // Common breakpoint for mobile devices
-};
+import React, { useState, useEffect, useRef } from "react";
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  StyleSheet,
+  Animated,
+  Alert,
+  Platform,
+} from "react-native";
+import { Edit2, Trash2, GripVertical, Check } from "lucide-react-native";
+import { colors } from "@/src/styles/common";
+import { ListItem } from "@/src/types/models";
+import { InlineEdit } from "./InlineEdit";
+import { Swipeable, RectButton } from "react-native-gesture-handler";
+import { isMobile, isMobileWeb } from "../utils/isMobile";
 
 interface ShoppingListItemProps {
   item: ListItem;
   onUpdate: (id: string, updates: Partial<ListItem>) => Promise<void>;
   onDelete?: (id: string) => Promise<void>;
   // Define the expected props from SortableItem
-  onMouseDown?: (event: any) => void;
-  onTouchStart?: (event: any) => void;
-  'aria-roledescription'?: string;
-  role?: string;
-  tabIndex?: number;
-  isDragging?: boolean;
-  mode?: 'edit' | 'shopping';
+  mode?: "edit" | "shopping";
   sourceListName?: string;
+  isDragging?: boolean;
+  dragHandleProps?: any;
 }
 
 export const ShoppingListItem: React.FC<ShoppingListItemProps> = ({
@@ -42,13 +31,9 @@ export const ShoppingListItem: React.FC<ShoppingListItemProps> = ({
   onUpdate,
   onDelete,
   isDragging = false,
-  mode = 'edit',
+  mode = "edit",
   sourceListName,
-  onMouseDown,
-  onTouchStart,
-  'aria-roledescription': ariaRoleDescription,
-  role,
-  tabIndex,
+  dragHandleProps,
 }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [editName, setEditName] = useState(item.name);
@@ -65,25 +50,29 @@ export const ShoppingListItem: React.FC<ShoppingListItemProps> = ({
     }
   }, [item, isEditing]);
 
-  const handleSaveAll = async (name = editName, quantity = editQuantity, unit = editUnit) => {
+  const handleSaveAll = async (
+    name = editName,
+    quantity = editQuantity,
+    unit = editUnit,
+  ) => {
     try {
       // Parse quantity
       const currentQuantity = parseInt(quantity, 10) || 1;
-      const currentUnit = unit || 'pc';
-      
-      console.log("Saving item with values:", { 
-        name, 
-        quantity: currentQuantity, 
-        unit: currentUnit 
+      const currentUnit = unit || "pc";
+
+      console.log("Saving item with values:", {
+        name,
+        quantity: currentQuantity,
+        unit: currentUnit,
       });
-      
+
       // Use the passed values for the update
       await onUpdate(item.id, {
         name,
         quantity: currentQuantity,
         unit: currentUnit,
       });
-      
+
       setIsEditing(false);
     } catch (error) {
       console.error("Error saving item:", error);
@@ -127,7 +116,7 @@ export const ShoppingListItem: React.FC<ShoppingListItemProps> = ({
 
   const handleDelete = async () => {
     if (!onDelete) return;
-    
+
     try {
       await onDelete(item.id);
       // Close the swipeable after deletion
@@ -140,7 +129,7 @@ export const ShoppingListItem: React.FC<ShoppingListItemProps> = ({
 
   const handleTogglePurchased = async () => {
     if (!item.id) return;
-    
+
     try {
       await onUpdate(item.id, { isPurchased: !item.isPurchased });
     } catch (error) {
@@ -155,23 +144,23 @@ export const ShoppingListItem: React.FC<ShoppingListItemProps> = ({
   // Render the delete action for swipe
   const renderRightActions = (
     progress: Animated.AnimatedInterpolation<number>,
-    dragX: Animated.AnimatedInterpolation<number>
+    dragX: Animated.AnimatedInterpolation<number>,
   ) => {
     const trans = dragX.interpolate({
       inputRange: [-80, 0],
       outputRange: [0, 80],
-      extrapolate: 'clamp',
+      extrapolate: "clamp",
     });
-    
+
     const opacity = dragX.interpolate({
       inputRange: [-80, -60, 0],
       outputRange: [1, 0.5, 0],
-      extrapolate: 'clamp',
+      extrapolate: "clamp",
     });
 
     return (
       <RectButton style={styles.deleteAction} onPress={handleDelete}>
-        <Animated.View 
+        <Animated.View
           style={[
             styles.deleteActionContent,
             {
@@ -188,7 +177,8 @@ export const ShoppingListItem: React.FC<ShoppingListItemProps> = ({
   };
 
   // Don't enable swipe when in editing mode or when dragging or in shopping mode
-  const enableSwipe = !isEditing && !isDragging && mode === 'edit' && onDelete !== undefined;
+  const enableSwipe =
+    !isEditing && !isDragging && mode === "edit" && onDelete !== undefined;
 
   return (
     <Swipeable
@@ -198,19 +188,17 @@ export const ShoppingListItem: React.FC<ShoppingListItemProps> = ({
       rightThreshold={40}
       enabled={enableSwipe}
     >
-      <View style={[
-        styles.itemRow, 
-        isDragging && styles.draggingItem,
-        item.isPurchased && styles.itemRowPurchased
-      ]}>
+      <View
+        style={[
+          styles.itemRow,
+          isDragging && styles.draggingItem,
+          item.isPurchased && styles.itemRowPurchased,
+        ]}
+      >
         {/* Show drag handle in edit mode, checkbox in shopping mode */}
-        {mode === 'edit' ? (
-          <View 
-            style={styles.dragHandle}
-          >
-            <TouchableOpacity
-              onPressIn={onTouchStart}
-            >
+        {mode === "edit" ? (
+          <View style={styles.dragHandle}>
+            <TouchableOpacity {...dragHandleProps}>
               <GripVertical size={16} color={colors.gray400} />
             </TouchableOpacity>
           </View>
@@ -225,10 +213,10 @@ export const ShoppingListItem: React.FC<ShoppingListItemProps> = ({
             {item.isPurchased && <Check size={16} color="#FFFFFF" />}
           </TouchableOpacity>
         )}
-        
+
         <View style={styles.itemContent}>
           <View style={styles.contentRow}>
-            {mode === 'edit' ? (
+            {mode === "edit" ? (
               <InlineEdit
                 value={editName}
                 onSave={handleNameChange}
@@ -245,16 +233,16 @@ export const ShoppingListItem: React.FC<ShoppingListItemProps> = ({
               <Text
                 style={[
                   styles.itemName,
-                  item.isPurchased && styles.itemPurchased
+                  item.isPurchased && styles.itemPurchased,
                 ]}
               >
                 {item.name}
               </Text>
             )}
-            
+
             {showQuantityAndUnit && (
               <View style={styles.quantityUnitContainer}>
-                {mode === 'edit' ? (
+                {mode === "edit" ? (
                   <>
                     <InlineEdit
                       value={editQuantity}
@@ -268,9 +256,11 @@ export const ShoppingListItem: React.FC<ShoppingListItemProps> = ({
                       onSubmitEditing={handleQuantitySubmit}
                       autoFocus={isEditing} // Focus on quantity when editing starts
                     />
-                    
-                    <Text style={styles.unitSeparator}>{isEditing ? '' : ' '}</Text>
-                    
+
+                    <Text style={styles.unitSeparator}>
+                      {isEditing ? "" : " "}
+                    </Text>
+
                     <InlineEdit
                       value={editUnit}
                       onSave={handleUnitChange}
@@ -291,17 +281,15 @@ export const ShoppingListItem: React.FC<ShoppingListItemProps> = ({
               </View>
             )}
           </View>
-          
+
           {/* Show source list name in shopping mode */}
-          {mode === 'shopping' && sourceListName && (
-            <Text style={styles.itemSource}>
-              From: {sourceListName}
-            </Text>
+          {mode === "shopping" && sourceListName && (
+            <Text style={styles.itemSource}>From: {sourceListName}</Text>
           )}
         </View>
 
         {/* Only show edit button in edit mode */}
-        {mode === 'edit' && (
+        {mode === "edit" && (
           <TouchableOpacity
             style={styles.editButton}
             onPress={handleStartEditing}
@@ -311,14 +299,17 @@ export const ShoppingListItem: React.FC<ShoppingListItemProps> = ({
         )}
 
         {/* Only show delete button on desktop in edit mode */}
-        {mode === 'edit' && Platform.OS === 'web' && !isMobileWeb() && onDelete && (
-          <TouchableOpacity
-            style={styles.deleteButton}
-            onPress={handleDelete}
-          >
-            <Trash2 size={16} color={colors.danger} />
-          </TouchableOpacity>
-        )}
+        {mode === "edit" &&
+          Platform.OS === "web" &&
+          !isMobileWeb() &&
+          onDelete && (
+            <TouchableOpacity
+              style={styles.deleteButton}
+              onPress={handleDelete}
+            >
+              <Trash2 size={16} color={colors.danger} />
+            </TouchableOpacity>
+          )}
       </View>
     </Swipeable>
   );
@@ -326,8 +317,8 @@ export const ShoppingListItem: React.FC<ShoppingListItemProps> = ({
 
 const styles = StyleSheet.create({
   itemRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     backgroundColor: colors.white,
     padding: isMobile() ? 8 : 10, // Less padding on mobile
     borderRadius: 8,
@@ -353,24 +344,24 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   contentRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
   },
   quantityUnitContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     marginLeft: 8,
     marginRight: 16,
   },
   itemName: {
     fontSize: 15, // Slightly smaller font
-    fontWeight: '500',
+    fontWeight: "500",
     color: colors.black,
     flex: 1,
   },
   itemPurchased: {
-    textDecorationLine: 'line-through',
+    textDecorationLine: "line-through",
     color: colors.gray400,
   },
   itemNameInput: {
@@ -383,11 +374,11 @@ const styles = StyleSheet.create({
   },
   quantityInput: {
     width: 40,
-    textAlign: 'center',
+    textAlign: "center",
   },
   unitInput: {
     width: 40,
-    textAlign: 'center',
+    textAlign: "center",
   },
   unitSeparator: {
     fontSize: 14,
@@ -396,10 +387,10 @@ const styles = StyleSheet.create({
   },
   dragHandle: {
     marginRight: 8, // Reduced margin
-    justifyContent: 'center',
+    justifyContent: "center",
     width: 24, // Smaller width
     height: 24, // Smaller height
-    alignItems: 'center',
+    alignItems: "center",
   },
   checkbox: {
     width: 24,
@@ -407,8 +398,8 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     borderWidth: 2,
     borderColor: colors.primary,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     marginRight: 12,
   },
   checkboxChecked: {
@@ -423,22 +414,22 @@ const styles = StyleSheet.create({
   },
   deleteAction: {
     backgroundColor: colors.danger,
-    justifyContent: 'center',
-    alignItems: 'flex-end',
+    justifyContent: "center",
+    alignItems: "flex-end",
     width: 80,
     borderRadius: 8,
     marginBottom: isMobile() ? 3 : 6, // Match the item margin
   },
   deleteActionContent: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     width: 80,
-    flexDirection: 'row',
+    flexDirection: "row",
   },
   deleteActionText: {
     color: colors.white,
-    fontWeight: '500',
+    fontWeight: "500",
     fontSize: 14,
     marginLeft: 4,
   },
